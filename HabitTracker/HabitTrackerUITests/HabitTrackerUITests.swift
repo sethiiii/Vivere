@@ -23,6 +23,13 @@ final class HabitTrackerUITests: XCTestCase {
 
         app.buttons["Calendar"].tap()
         XCTAssertTrue(app.navigationBars["Calendar"].waitForExistence(timeout: 2))
+        let annualCalendar = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH 'Show annual activity'")
+        ).firstMatch
+        XCTAssertTrue(annualCalendar.waitForExistence(timeout: 2))
+        annualCalendar.tap()
+        XCTAssertTrue(app.navigationBars["Year in Review"].waitForExistence(timeout: 2))
+        app.navigationBars["Year in Review"].buttons["Done"].tap()
 
         app.buttons["Journal"].tap()
         XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 2))

@@ -15,6 +15,7 @@ struct ActivityCalendarView: View {
     @AppStorage("accentTheme") private var accentTheme = AppAccentTheme.indigo.rawValue
     @State private var displayedMonth = Calendar.current.startOfDay(for: Date())
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
+    @State private var showingAnnualCalendar = false
 
     let onOpenJournal: (JournalEntry) -> Void
 
@@ -55,6 +56,14 @@ struct ActivityCalendarView: View {
             .background(AppTheme.canvas)
             .navigationTitle("Calendar")
             .navigationBarTitleDisplayMode(.large)
+            .sheet(isPresented: $showingAnnualCalendar) {
+                AnnualActivityView(habits: Array(habits), initialYear: displayedMonth) { date in
+                    displayedMonth = calendar.date(
+                        from: calendar.dateComponents([.year, .month], from: date)
+                    ) ?? date
+                    selectedDate = calendar.startOfDay(for: date)
+                }
+            }
         }
     }
 
@@ -107,8 +116,17 @@ struct ActivityCalendarView: View {
                 .accessibilityLabel("Previous month")
 
                 Spacer()
-                Text(displayedMonth, format: .dateTime.month(.wide).year())
+                Button { showingAnnualCalendar = true } label: {
+                    HStack(spacing: 5) {
+                        Text(displayedMonth, format: .dateTime.month(.wide).year())
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.secondary)
+                    }
                     .font(.headline)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Show annual activity for \(displayedMonth.formatted(.dateTime.year()))")
                 Spacer()
 
                 Button { changeMonth(by: 1) } label: {
@@ -298,5 +316,209 @@ struct ActivityCalendarView: View {
         } else {
             withAnimation(.snappy(duration: 0.22)) { selectedDate = normalized }
         }
+    }
+}
+
+private struct AnnualActivityView: View {
+    let habits: [Habit]
+    let onSelectDate: (Date) -> Void
+    private let activityCounts: [Date: Int]
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var displayedYear: Date
+
+    private let calendar = Calendar.current
+    private let monthColumns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+    private let dayColumns = Array(repeating: GridItem(.flexible(), spacing: 3), count: 7)
+
+    init(habits: [Habit], initialYear: Date, onSelectDate: @escaping (Date) -> Void) {
+        self.habits = habits
+        self.onSelectDate = onSelectDate
+        let calendar = Calendar.current
+        var counts: [Date: Int] = [:]
+        for habit in habits {
+            let uniqueDays = Set(habit.achievedCompletionDates.map { calendar.startOfDay(for: $0) })
+            for day in uniqueDays { counts[day, default: 0] += 1 }
+        }
+        activityCounts = counts
+        _displayedYear = State(initialValue: calendar.date(
+            from: calendar.dateComponents([.year], from: initialYear)
+        ) ?? initialYear)
+    }
+
+    private var datesInYear: [Date] {
+        let year = calendar.component(.year, from: displayedYear)
+        return activityCounts.keys.filter { calendar.component(.year, from: $0) == year }
+    }
+
+    private var yearlyStatistics: HabitStatistics {
+        let currentYear = calendar.component(.year, from: Date())
+        let selectedYear = calendar.component(.year, from: displayedYear)
+        let reference: Date
+        if selectedYear == currentYear {
+            reference = Date()
+        } else {
+            reference = calendar.date(from: DateComponents(year: selectedYear, month: 12, day: 31)) ?? displayedYear
+        }
+        return HabitStatistics(completionDates: datesInYear, relativeTo: reference, calendar: calendar)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    yearHeader
+                    yearSummary
+                    LazyVGrid(columns: monthColumns, spacing: 12) {
+                        ForEach(1...12, id: \.self) { month in
+                            annualMonth(month)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 28)
+            }
+            .background(AppTheme.canvas)
+            .navigationTitle("Year in Review")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var yearHeader: some View {
+        HStack {
+            Button { changeYear(by: -1) } label: {
+                Image(systemName: "chevron.left").frame(width: 40, height: 40)
+            }
+            .accessibilityLabel("Previous year")
+            Spacer()
+            Text(displayedYear, format: .dateTime.year())
+                .font(.title2.bold().monospacedDigit())
+            Spacer()
+            Button { changeYear(by: 1) } label: {
+                Image(systemName: "chevron.right").frame(width: 40, height: 40)
+            }
+            .disabled(isCurrentYear)
+            .accessibilityLabel("Next year")
+        }
+        .padding(.horizontal, 4)
+    }
+
+    private var yearSummary: some View {
+        HStack(spacing: 12) {
+            annualMetric("Active days", value: datesInYear.count, symbol: "calendar.badge.checkmark")
+            annualMetric("Best streak", value: yearlyStatistics.longestStreak, symbol: "flame.fill")
+        }
+    }
+
+    private func annualMetric(_ title: String, value: Int, symbol: String) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: symbol)
+                .foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("\(value)").font(.headline.monospacedDigit())
+                Text(title).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity)
+        .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func annualMonth(_ month: Int) -> some View {
+        let year = calendar.component(.year, from: displayedYear)
+        let firstDay = calendar.date(from: DateComponents(year: year, month: month, day: 1)) ?? displayedYear
+        let grid = MonthGrid(month: firstDay, calendar: calendar)
+
+        return VStack(alignment: .leading, spacing: 8) {
+            Button {
+                choose(firstDay)
+            } label: {
+                Text(firstDay, format: .dateTime.month(.wide))
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+
+            if let grid {
+                LazyVGrid(columns: dayColumns, spacing: 3) {
+                    ForEach(grid.weekdaySymbols, id: \.self) { symbol in
+                        Text(String(symbol.prefix(1)))
+                            .font(.system(size: 7, weight: .semibold))
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity)
+                    }
+                    ForEach((0..<grid.leadingBlankCount).map { "annual-blank-\(month)-\($0)" }, id: \.self) { _ in
+                        Color.clear.aspectRatio(1, contentMode: .fit)
+                    }
+                    ForEach(grid.dates, id: \.self) { date in
+                        annualDay(date)
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func annualDay(_ date: Date) -> some View {
+        let count = activityCounts[calendar.startOfDay(for: date), default: 0]
+        let level = intensityLevel(for: count)
+        let isFuture = date > calendar.startOfDay(for: Date())
+
+        return Button { choose(date) } label: {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(activityColor(level: level))
+                .aspectRatio(1, contentMode: .fit)
+                .overlay {
+                    if calendar.isDateInToday(date) {
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .stroke(Color.primary.opacity(0.7), lineWidth: 1)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .disabled(isFuture)
+        .opacity(isFuture ? 0.3 : 1)
+        .accessibilityLabel(date.formatted(date: .complete, time: .omitted))
+        .accessibilityValue(count == 1 ? "1 habit completed" : "\(count) habits completed")
+    }
+
+    private var isCurrentYear: Bool {
+        calendar.isDate(displayedYear, equalTo: Date(), toGranularity: .year)
+    }
+
+    private func intensityLevel(for count: Int) -> Int {
+        guard count > 0 else { return 0 }
+        return min(4, max(1, Int(ceil(Double(count) / Double(max(1, habits.count)) * 4))))
+    }
+
+    private func activityColor(level: Int) -> Color {
+        guard level > 0 else { return Color.primary.opacity(0.055) }
+        return Color.accentColor.opacity([0, 0.24, 0.42, 0.64, 0.9][min(4, level)])
+    }
+
+    private func changeYear(by amount: Int) {
+        guard let newYear = calendar.date(byAdding: .year, value: amount, to: displayedYear) else { return }
+        if reduceMotion {
+            displayedYear = newYear
+        } else {
+            withAnimation(.snappy(duration: 0.25)) { displayedYear = newYear }
+        }
+    }
+
+    private func choose(_ date: Date) {
+        onSelectDate(date)
+        dismiss()
     }
 }
