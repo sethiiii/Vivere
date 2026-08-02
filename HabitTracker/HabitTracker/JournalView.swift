@@ -14,6 +14,7 @@ struct JournalView: View {
     @State private var searchText = ""
     @State private var editingEntry: JournalEntry?
     @State private var showingTodayEditor = false
+    @State private var showingCalendar = false
 
     private var quote: MotivationalQuote {
         MotivationalQuote.daily(category: QuoteCategory(rawValue: categoryRaw) ?? .all)
@@ -43,16 +44,24 @@ struct JournalView: View {
             .searchable(text: $searchText, prompt: "Search your journal")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingCalendar = true } label: { Image(systemName: "calendar") }
+                        .accessibilityLabel("Journal calendar")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button { showingTodayEditor = true } label: { Image(systemName: "square.and.pencil") }
                         .accessibilityLabel("Write journal entry")
                 }
             }
             .sheet(isPresented: $showingTodayEditor) {
-                JournalEditorView(entry: entryForToday, quote: quote)
+                JournalEditorView(entry: entryForToday, quote: quote, date: Date())
                     .environment(\.managedObjectContext, context)
             }
             .sheet(item: $editingEntry) { entry in
-                JournalEditorView(entry: entry, quote: quote)
+                JournalEditorView(entry: entry, quote: quote, date: entry.date ?? Date())
+                    .environment(\.managedObjectContext, context)
+            }
+            .sheet(isPresented: $showingCalendar) {
+                JournalCalendarView()
                     .environment(\.managedObjectContext, context)
             }
         }
@@ -163,6 +172,81 @@ struct JournalView: View {
     }
 }
 
+private struct JournalCalendarView: View {
+    @Environment(\.managedObjectContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("quote.category") private var categoryRaw = QuoteCategory.all.rawValue
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \JournalEntry.date, ascending: false)]
+    ) private var entries: FetchedResults<JournalEntry>
+    @State private var selectedDate = Date()
+    @State private var showingEditor = false
+
+    private var selectedEntry: JournalEntry? {
+        entries.first { entry in
+            guard let date = entry.date else { return false }
+            return Calendar.current.isDate(date, inSameDayAs: selectedDate)
+        }
+    }
+
+    private var quote: MotivationalQuote {
+        MotivationalQuote.daily(
+            category: QuoteCategory(rawValue: categoryRaw) ?? .all,
+            on: selectedDate
+        )
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 18) {
+                DatePicker(
+                    "Journal date",
+                    selection: $selectedDate,
+                    in: ...Date(),
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .padding(.horizontal)
+
+                VStack(alignment: .leading, spacing: 7) {
+                    Label(
+                        selectedEntry == nil ? "An unwritten page" : selectedEntry?.displayTitle ?? "Journal page",
+                        systemImage: selectedEntry == nil ? "doc" : "checkmark.circle.fill"
+                    )
+                    .font(.headline)
+                    Text(selectedEntry?.previewText ?? JournalPrompt.daily(on: selectedDate))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(18)
+                .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .padding(.horizontal, 20)
+
+                Button(selectedEntry == nil ? "Write This Page" : "Open This Page") {
+                    showingEditor = true
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.roundedRectangle(radius: 14))
+                .controlSize(.large)
+
+                Spacer()
+            }
+            .background(AppTheme.canvas)
+            .navigationTitle("Journal Calendar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+            .sheet(isPresented: $showingEditor) {
+                JournalEditorView(entry: selectedEntry, quote: quote, date: selectedDate)
+                    .environment(\.managedObjectContext, context)
+            }
+        }
+    }
+}
+
 private struct JournalEntryRow: View {
     @ObservedObject var entry: JournalEntry
 
@@ -199,7 +283,7 @@ private struct JournalEditorView: View {
     @State private var errorMessage: String?
     @State private var confirmingDeletion = false
 
-    init(entry: JournalEntry?, quote: MotivationalQuote) {
+    init(entry: JournalEntry?, quote: MotivationalQuote, date: Date) {
         self.entry = entry
         self.quote = quote
         var initial = JournalDraft()
@@ -214,7 +298,8 @@ private struct JournalEditorView: View {
             initial.quoteID = entry.quoteID
             initial.photoData = entry.photoData
         } else {
-            initial.prompt = "What felt meaningful today?"
+            initial.date = date
+            initial.prompt = JournalPrompt.daily(on: date)
             initial.quoteID = quote.id
         }
         _draft = State(initialValue: initial)
@@ -327,5 +412,35 @@ private struct JournalEditorView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+}
+
+private enum JournalPrompt {
+    static let prompts = [
+        "What felt meaningful today?",
+        "What gave you energy, and what took it away?",
+        "Where did you show courage today?",
+        "What is one moment you want to remember?",
+        "What did today teach you about yourself?",
+        "What are you carrying that you can put down?",
+        "When did you feel most present today?",
+        "What small choice moved your life forward?",
+        "What deserves more of your attention tomorrow?",
+        "What are you proud of that no one else saw?",
+        "What surprised you today?",
+        "Where could you offer yourself more patience?",
+        "What conversation stayed with you?",
+        "What made today feel lighter?",
+        "What would make tomorrow feel successful?",
+        "Which habit supported the person you want to become?",
+        "What did you avoid, and what might help you begin?",
+        "What beauty did you notice today?",
+        "What is within your control right now?",
+        "If today had a title, what would it be?"
+    ]
+
+    static func daily(on date: Date = Date(), calendar: Calendar = .current) -> String {
+        let day = calendar.ordinality(of: .day, in: .era, for: date) ?? 0
+        return prompts[abs(day) % prompts.count]
     }
 }
