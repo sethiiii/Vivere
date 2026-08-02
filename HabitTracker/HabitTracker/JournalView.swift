@@ -16,6 +16,12 @@ struct JournalView: View {
     @State private var editingEntry: JournalEntry?
     @State private var showingTodayEditor = false
     @State private var showingCalendar = false
+    @State private var showingFullQuote = false
+    @Binding private var requestedEntry: JournalEntry?
+
+    init(requestedEntry: Binding<JournalEntry?> = .constant(nil)) {
+        _requestedEntry = requestedEntry
+    }
 
     private var quote: MotivationalQuote {
         MotivationalQuote.daily(category: QuoteCategory(rawValue: categoryRaw) ?? .all)
@@ -73,7 +79,20 @@ struct JournalView: View {
                 JournalCalendarView()
                     .environment(\.managedObjectContext, context)
             }
+            .alert("Daily Motivation", isPresented: $showingFullQuote) {
+                Button("Done", role: .cancel) {}
+            } message: {
+                Text("“\(quote.text)” — \(quote.author)")
+            }
+            .onAppear(perform: openRequestedEntry)
+            .onChange(of: requestedEntry?.objectID) { _, _ in openRequestedEntry() }
         }
+    }
+
+    private func openRequestedEntry() {
+        guard let entry = requestedEntry else { return }
+        editingEntry = entry
+        requestedEntry = nil
     }
 
     private var entryForToday: JournalEntry? {
@@ -86,10 +105,12 @@ struct JournalView: View {
     private var quoteCard: some View {
         ZStack(alignment: .trailing) {
             Text("“\(quote.text)” — \(quote.author)")
-                .font(.footnote.weight(.medium))
+                .font(quoteCardFont.weight(.medium))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
+                .minimumScaleFactor(0.78)
+                .allowsTightening(true)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 28)
                 .accessibilityLabel("Daily motivation. \(quote.text). \(quote.author)")
@@ -106,6 +127,9 @@ struct JournalView: View {
                         systemImage: isFavorite(quote) ? "star.slash" : "star"
                     )
                 }
+                Button { showingFullQuote = true } label: {
+                    Label("Read Full Quote", systemImage: "text.quote")
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.caption.weight(.semibold))
@@ -118,6 +142,11 @@ struct JournalView: View {
         .padding(.horizontal, 10)
         .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .contain)
+    }
+
+    private var quoteCardFont: Font {
+        let length = quote.text.count + quote.author.count
+        return length > 118 ? .caption2 : (length > 88 ? .caption : .footnote)
     }
 
     private func isFavorite(_ quote: MotivationalQuote) -> Bool {
@@ -288,6 +317,7 @@ private struct JournalEditorView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var errorMessage: String?
     @State private var confirmingDeletion = false
+    @State private var showingNotes: Bool
 
     init(entry: JournalEntry?, quote: MotivationalQuote, date: Date) {
         self.entry = entry
@@ -296,9 +326,11 @@ private struct JournalEditorView: View {
         if let entry {
             initial.date = entry.date ?? Date()
             initial.title = entry.title ?? ""
-            initial.body = entry.body ?? ""
+            initial.spiritualWin = entry.spiritualWin ?? ""
+            initial.mentalWin = entry.mentalWin ?? entry.body ?? ""
+            initial.physicalWin = entry.physicalWin ?? ""
             initial.gratitude = entry.gratitude ?? ""
-            initial.intention = entry.intention ?? ""
+            initial.notes = entry.notes ?? entry.intention ?? ""
             initial.mood = entry.mood
             initial.prompt = entry.prompt ?? ""
             initial.quoteID = entry.quoteID
@@ -309,6 +341,7 @@ private struct JournalEditorView: View {
             initial.quoteID = quote.id
         }
         _draft = State(initialValue: initial)
+        _showingNotes = State(initialValue: !initial.notes.isEmpty)
     }
 
     var body: some View {
@@ -319,17 +352,45 @@ private struct JournalEditorView: View {
                     TextField("Title (optional)", text: $draft.title)
                     moodPicker
                 }
-                Section(draft.prompt) {
-                    TextField("Write without editing yourself…", text: $draft.body, axis: .vertical)
-                        .lineLimit(8...18)
+                Section {
+                    Text("Record one honest win in each area. Small wins count.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-                Section("Gratitude") {
-                    TextField("Something I appreciate…", text: $draft.gratitude, axis: .vertical)
-                        .lineLimit(2...5)
+                Section {
+                    TextField("A moment of faith, gratitude, purpose, or inner peace…", text: $draft.spiritualWin, axis: .vertical)
+                        .lineLimit(3...7)
+                } header: {
+                    Label("Spiritual Win", systemImage: "sparkles")
                 }
-                Section("Tomorrow") {
-                    TextField("One clear intention…", text: $draft.intention, axis: .vertical)
+                Section {
+                    TextField("Something you learned, understood, focused on, or handled well…", text: $draft.mentalWin, axis: .vertical)
+                        .lineLimit(3...7)
+                } header: {
+                    Label("Mental Win", systemImage: "brain.head.profile")
+                }
+                Section {
+                    TextField("Movement, recovery, nourishment, sleep, or another act of care…", text: $draft.physicalWin, axis: .vertical)
+                        .lineLimit(3...7)
+                } header: {
+                    Label("Physical Win", systemImage: "figure.run")
+                }
+                Section {
+                    TextField("Something you are grateful for today…", text: $draft.gratitude, axis: .vertical)
                         .lineLimit(2...5)
+                } header: {
+                    Label("Gratitude", systemImage: "heart.fill")
+                }
+                Section {
+                    Toggle("Add notes", isOn: $showingNotes)
+                }
+                if showingNotes {
+                    Section {
+                        TextField("Anything else worth remembering…", text: $draft.notes, axis: .vertical)
+                            .lineLimit(3...9)
+                    } header: {
+                        Label("Notes", systemImage: "note.text")
+                    }
                 }
                 photoSection
                 if entry != nil {

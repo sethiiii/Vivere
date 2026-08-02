@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum AppTheme {
     static let accent = Color.accentColor
@@ -8,33 +9,41 @@ enum AppTheme {
 }
 
 enum AppAccentTheme: String, CaseIterable, Identifiable {
-    case indigo
     case monochrome
-    case forest
-    case ocean
+    case red
     case sunset
+    case ocean
+    case forest
+    case indigo
     case berry
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .indigo: "Indigo"
         case .monochrome: "Mono"
-        case .forest: "Forest"
-        case .ocean: "Ocean"
-        case .sunset: "Sunset"
-        case .berry: "Berry"
+        case .red: "Red"
+        case .sunset: "Orange"
+        case .ocean: "Yellow"
+        case .forest: "Green"
+        case .indigo: "Blue"
+        case .berry: "Purple"
         }
     }
 
     var color: Color {
         switch self {
-        case .indigo: Color(red: 0.32, green: 0.45, blue: 0.96)
-        case .monochrome: .primary
-        case .forest: Color(red: 0.12, green: 0.52, blue: 0.34)
-        case .ocean: Color(red: 0.04, green: 0.48, blue: 0.69)
+        case .monochrome:
+            Color(uiColor: UIColor { traits in
+                traits.userInterfaceStyle == .dark
+                    ? UIColor(white: 0.58, alpha: 1)
+                    : .black
+            })
+        case .red: Color(red: 0.86, green: 0.18, blue: 0.22)
         case .sunset: Color(red: 0.88, green: 0.35, blue: 0.24)
+        case .ocean: Color(red: 0.95, green: 0.72, blue: 0.10)
+        case .forest: Color(red: 0.12, green: 0.52, blue: 0.34)
+        case .indigo: Color(red: 0.24, green: 0.43, blue: 0.96)
         case .berry: Color(red: 0.66, green: 0.25, blue: 0.58)
         }
     }

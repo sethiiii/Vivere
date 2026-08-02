@@ -9,6 +9,17 @@ struct HabitTrackerApp: App {
     private let isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
 
     init() {
+        UserDefaults.standard.register(defaults: [
+            "appearance": "system",
+            "accentTheme": AppAccentTheme.indigo.rawValue,
+            "feature.insights": true,
+            "feature.advancedHabitOptions": true,
+            "feature.haptics": true,
+            "feature.weeklyReview": true,
+            "feature.gallery": true,
+            "feature.journal": true,
+            "feature.dailyMotivation": true
+        ])
         if ProcessInfo.processInfo.arguments.contains("-ui-testing-gallery") {
             UserDefaults.standard.set(true, forKey: "feature.gallery")
         }

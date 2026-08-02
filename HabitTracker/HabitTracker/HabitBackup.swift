@@ -56,6 +56,10 @@ struct HabitBackup: Codable {
         let prompt: String?
         let quoteID: String?
         let photoData: Data?
+        let spiritualWin: String?
+        let mentalWin: String?
+        let physicalWin: String?
+        let notes: String?
     }
 }
 
@@ -150,7 +154,11 @@ enum HabitBackupService {
                 mood: entry.mood,
                 prompt: entry.prompt,
                 quoteID: entry.quoteID,
-                photoData: entry.photoData
+                photoData: entry.photoData,
+                spiritualWin: entry.spiritualWin,
+                mentalWin: entry.mentalWin,
+                physicalWin: entry.physicalWin,
+                notes: entry.notes
             )
         }
         return HabitBackup(formatVersion: 1, exportedAt: Date(), habits: records, journalEntries: journals)
@@ -226,6 +234,10 @@ enum HabitBackupService {
             entry.prompt = record.prompt
             entry.quoteID = record.quoteID
             entry.photoData = record.photoData
+            entry.spiritualWin = record.spiritualWin
+            entry.mentalWin = record.mentalWin
+            entry.physicalWin = record.physicalWin
+            entry.notes = record.notes
             journalsByID[record.id] = entry
         }
         try HabitStore.save(context)

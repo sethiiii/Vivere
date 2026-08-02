@@ -5,29 +5,49 @@ struct ContentView: View {
     @AppStorage("feature.journal") private var journalEnabled = true
     @AppStorage("accentTheme") private var accentTheme = AppAccentTheme.indigo.rawValue
     @State private var selectedTab = AppTab.habits
+    @State private var requestedJournalEntry: JournalEntry?
 
     private var selectedAccent: AppAccentTheme {
         AppAccentTheme(rawValue: accentTheme) ?? .indigo
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            TodayView()
-                .tag(AppTab.habits)
+        ZStack(alignment: .bottom) {
+            ZStack {
+                ActivityCalendarView { entry in
+                    if reduceMotion {
+                        selectedTab = .journal
+                    } else {
+                        withAnimation(.snappy(duration: 0.26)) { selectedTab = .journal }
+                    }
+                    DispatchQueue.main.async { requestedJournalEntry = entry }
+                }
+                .opacity(selectedTab == .calendar ? 1 : 0)
+                .allowsHitTesting(selectedTab == .calendar)
+                .accessibilityHidden(selectedTab != .calendar)
 
-            if journalEnabled {
-                JournalView()
-                    .tag(AppTab.journal)
+                TodayView()
+                    .opacity(selectedTab == .habits ? 1 : 0)
+                    .allowsHitTesting(selectedTab == .habits)
+                    .accessibilityHidden(selectedTab != .habits)
+
+                if journalEnabled {
+                    JournalView(requestedEntry: $requestedJournalEntry)
+                        .opacity(selectedTab == .journal ? 1 : 0)
+                        .allowsHitTesting(selectedTab == .journal)
+                        .accessibilityHidden(selectedTab != .journal)
+                }
+
+                SettingsView()
+                    .opacity(selectedTab == .settings ? 1 : 0)
+                    .allowsHitTesting(selectedTab == .settings)
+                    .accessibilityHidden(selectedTab != .settings)
             }
+            .safeAreaPadding(.bottom, 76)
 
-            SettingsView()
-                .tag(AppTab.settings)
-        }
-        .toolbar(.hidden, for: .tabBar)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
             FloatingTabBar(
                 selectedTab: $selectedTab,
-                tabs: journalEnabled ? AppTab.allCases : [.habits, .settings],
+                tabs: journalEnabled ? AppTab.allCases : [.calendar, .habits, .settings],
                 reduceMotion: reduceMotion
             )
         }
@@ -36,6 +56,7 @@ struct ContentView: View {
 }
 
 private enum AppTab: String, CaseIterable, Identifiable {
+    case calendar
     case habits
     case journal
     case settings
@@ -45,6 +66,7 @@ private enum AppTab: String, CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
+        case .calendar: "calendar"
         case .habits: "checkmark.circle.fill"
         case .journal: "book.closed.fill"
         case .settings: "gearshape.fill"

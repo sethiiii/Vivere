@@ -4,13 +4,16 @@ import Foundation
 struct JournalDraft {
     var date = Date()
     var title = ""
-    var body = ""
+    var spiritualWin = ""
+    var mentalWin = ""
+    var physicalWin = ""
     var gratitude = ""
-    var intention = ""
+    var notes = ""
     var mood: Int16 = 3
     var prompt = ""
     var quoteID: String?
     var photoData: Data?
+
 }
 
 enum JournalStoreError: LocalizedError {
@@ -46,9 +49,11 @@ enum JournalStore {
         entry.updatedAt = now
         entry.date = Calendar.current.startOfDay(for: draft.date)
         entry.title = cleaned(draft.title)
-        entry.body = cleaned(draft.body)
+        entry.spiritualWin = cleaned(draft.spiritualWin)
+        entry.mentalWin = cleaned(draft.mentalWin)
+        entry.physicalWin = cleaned(draft.physicalWin)
         entry.gratitude = cleaned(draft.gratitude)
-        entry.intention = cleaned(draft.intention)
+        entry.notes = cleaned(draft.notes)
         entry.mood = max(1, min(5, draft.mood))
         entry.prompt = cleaned(draft.prompt)
         entry.quoteID = draft.quoteID

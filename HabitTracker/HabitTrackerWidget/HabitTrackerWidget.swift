@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-private let appGroupIdentifier = "group.com.sethi.HabitTracker"
+private let appGroupIdentifier = "group.com.sethiiii.vivere"
 private let snapshotKey = "widget.today.snapshot.v1"
 
 private struct WidgetSnapshot: Codable {

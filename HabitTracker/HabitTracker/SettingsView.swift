@@ -6,10 +6,10 @@ struct SettingsView: View {
     @AppStorage("appearance") private var appearance = "system"
     @AppStorage("accentTheme") private var accentTheme = AppAccentTheme.indigo.rawValue
     @AppStorage("feature.insights") private var insightsEnabled = true
-    @AppStorage("feature.advancedHabitOptions") private var advancedHabitOptions = false
+    @AppStorage("feature.advancedHabitOptions") private var advancedHabitOptions = true
     @AppStorage("feature.haptics") private var hapticsEnabled = true
-    @AppStorage("feature.weeklyReview") private var weeklyReviewEnabled = false
-    @AppStorage("feature.gallery") private var galleryEnabled = false
+    @AppStorage("feature.weeklyReview") private var weeklyReviewEnabled = true
+    @AppStorage("feature.gallery") private var galleryEnabled = true
     @AppStorage("feature.journal") private var journalEnabled = true
     @AppStorage("quote.category") private var quoteCategory = QuoteCategory.all.rawValue
     @AppStorage("feature.dailyMotivation") private var dailyMotivationEnabled = true

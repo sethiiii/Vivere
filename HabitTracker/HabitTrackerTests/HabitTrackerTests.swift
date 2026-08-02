@@ -8,7 +8,7 @@ struct HabitStatisticsTests {
         let bundle = Bundle(for: Habit.self)
         let modelDirectory = try #require(bundle.url(forResource: "HabitTracker", withExtension: "momd"))
         let versionOneURL = modelDirectory.appendingPathComponent("HabitTracker.mom")
-        let currentURL = modelDirectory.appendingPathComponent("HabitTracker 3.mom")
+        let currentURL = modelDirectory.appendingPathComponent("HabitTracker 4.mom")
         let versionOneModel = try #require(NSManagedObjectModel(contentsOf: versionOneURL))
         let currentModel = try #require(NSManagedObjectModel(contentsOf: currentURL))
 
@@ -338,17 +338,21 @@ struct HabitStoreTests {
         let (_, context) = makeStore()
         var first = JournalDraft()
         first.date = Date(timeIntervalSince1970: 1_785_652_800)
-        first.body = "Morning reflection"
+        first.spiritualWin = "Stayed grateful"
+        first.mentalWin = "Morning reflection"
+        first.physicalWin = "Walked outside"
         try JournalStore.save(first, in: context)
 
         var update = first
-        update.body = "Updated reflection"
+        update.mentalWin = "Updated reflection"
         try JournalStore.save(update, in: context)
 
         let entries = try context.fetch(JournalEntry.fetchRequest())
         let backup = try HabitBackupService.makeBackup(from: context)
         #expect(entries.count == 1)
-        #expect(entries.first?.body == "Updated reflection")
+        #expect(entries.first?.mentalWin == "Updated reflection")
+        #expect(entries.first?.spiritualWin == "Stayed grateful")
+        #expect(entries.first?.physicalWin == "Walked outside")
         #expect(backup.journalEntries?.count == 1)
     }
 
