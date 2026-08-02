@@ -350,9 +350,9 @@ struct HabitStoreTests {
         let entries = try context.fetch(JournalEntry.fetchRequest())
         let backup = try HabitBackupService.makeBackup(from: context)
         #expect(entries.count == 1)
-        #expect(entries.first?.body == "Updated reflection")
-        #expect(entries.first?.gratitude == "Stayed grateful")
-        #expect(entries.first?.intention == "Walked outside")
+        #expect(entries.first?.mentalWin == "Updated reflection")
+        #expect(entries.first?.spiritualWin == "Stayed grateful")
+        #expect(entries.first?.physicalWin == "Walked outside")
         #expect(backup.journalEntries?.count == 1)
     }
 

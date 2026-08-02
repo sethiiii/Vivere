@@ -11,7 +11,7 @@ private struct DailyCompletionTotal: Identifiable {
 struct InsightsView: View {
     @Environment(\.dismiss) private var dismiss
     let presentedModally: Bool
-    @AppStorage("feature.weeklyReview") private var weeklyReviewEnabled = false
+    @AppStorage("feature.weeklyReview") private var weeklyReviewEnabled = true
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Habit.name, ascending: true)],
         predicate: NSPredicate(format: "isArchived == NO"),

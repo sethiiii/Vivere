@@ -13,11 +13,15 @@ extension JournalEntry {
     @NSManaged public var id: UUID?
     @NSManaged public var intention: String?
     @NSManaged public var mood: Int16
+    @NSManaged public var mentalWin: String?
+    @NSManaged public var notes: String?
     @NSManaged public var photoData: Data?
+    @NSManaged public var physicalWin: String?
     @NSManaged public var prompt: String?
     @NSManaged public var quoteID: String?
     @NSManaged public var title: String?
     @NSManaged public var updatedAt: Date?
+    @NSManaged public var spiritualWin: String?
 }
 
 extension JournalEntry: Identifiable {
@@ -27,7 +31,7 @@ extension JournalEntry: Identifiable {
     }
 
     var previewText: String {
-        let candidates = [gratitude, body, intention]
+        let candidates = [spiritualWin, mentalWin, physicalWin, gratitude, notes, body, intention]
         return candidates.compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .first { !$0.isEmpty } ?? "A quiet space for your thoughts."
     }

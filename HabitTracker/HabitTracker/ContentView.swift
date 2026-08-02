@@ -5,6 +5,7 @@ struct ContentView: View {
     @AppStorage("feature.journal") private var journalEnabled = true
     @AppStorage("accentTheme") private var accentTheme = AppAccentTheme.indigo.rawValue
     @State private var selectedTab = AppTab.habits
+    @State private var requestedJournalEntry: JournalEntry?
 
     private var selectedAccent: AppAccentTheme {
         AppAccentTheme(rawValue: accentTheme) ?? .indigo
@@ -13,13 +14,25 @@ struct ContentView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             ZStack {
+                ActivityCalendarView { entry in
+                    if reduceMotion {
+                        selectedTab = .journal
+                    } else {
+                        withAnimation(.snappy(duration: 0.26)) { selectedTab = .journal }
+                    }
+                    DispatchQueue.main.async { requestedJournalEntry = entry }
+                }
+                .opacity(selectedTab == .calendar ? 1 : 0)
+                .allowsHitTesting(selectedTab == .calendar)
+                .accessibilityHidden(selectedTab != .calendar)
+
                 TodayView()
                     .opacity(selectedTab == .habits ? 1 : 0)
                     .allowsHitTesting(selectedTab == .habits)
                     .accessibilityHidden(selectedTab != .habits)
 
                 if journalEnabled {
-                    JournalView()
+                    JournalView(requestedEntry: $requestedJournalEntry)
                         .opacity(selectedTab == .journal ? 1 : 0)
                         .allowsHitTesting(selectedTab == .journal)
                         .accessibilityHidden(selectedTab != .journal)
@@ -34,7 +47,7 @@ struct ContentView: View {
 
             FloatingTabBar(
                 selectedTab: $selectedTab,
-                tabs: journalEnabled ? AppTab.allCases : [.habits, .settings],
+                tabs: journalEnabled ? AppTab.allCases : [.calendar, .habits, .settings],
                 reduceMotion: reduceMotion
             )
         }
@@ -43,6 +56,7 @@ struct ContentView: View {
 }
 
 private enum AppTab: String, CaseIterable, Identifiable {
+    case calendar
     case habits
     case journal
     case settings
@@ -52,6 +66,7 @@ private enum AppTab: String, CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
+        case .calendar: "calendar"
         case .habits: "checkmark.circle.fill"
         case .journal: "book.closed.fill"
         case .settings: "gearshape.fill"

@@ -17,6 +17,11 @@ struct JournalView: View {
     @State private var showingTodayEditor = false
     @State private var showingCalendar = false
     @State private var showingFullQuote = false
+    @Binding private var requestedEntry: JournalEntry?
+
+    init(requestedEntry: Binding<JournalEntry?> = .constant(nil)) {
+        _requestedEntry = requestedEntry
+    }
 
     private var quote: MotivationalQuote {
         MotivationalQuote.daily(category: QuoteCategory(rawValue: categoryRaw) ?? .all)
@@ -79,7 +84,15 @@ struct JournalView: View {
             } message: {
                 Text("“\(quote.text)” — \(quote.author)")
             }
+            .onAppear(perform: openRequestedEntry)
+            .onChange(of: requestedEntry?.objectID) { _, _ in openRequestedEntry() }
         }
+    }
+
+    private func openRequestedEntry() {
+        guard let entry = requestedEntry else { return }
+        editingEntry = entry
+        requestedEntry = nil
     }
 
     private var entryForToday: JournalEntry? {
@@ -304,6 +317,7 @@ private struct JournalEditorView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var errorMessage: String?
     @State private var confirmingDeletion = false
+    @State private var showingNotes: Bool
 
     init(entry: JournalEntry?, quote: MotivationalQuote, date: Date) {
         self.entry = entry
@@ -312,9 +326,11 @@ private struct JournalEditorView: View {
         if let entry {
             initial.date = entry.date ?? Date()
             initial.title = entry.title ?? ""
-            initial.body = entry.body ?? ""
+            initial.spiritualWin = entry.spiritualWin ?? ""
+            initial.mentalWin = entry.mentalWin ?? entry.body ?? ""
+            initial.physicalWin = entry.physicalWin ?? ""
             initial.gratitude = entry.gratitude ?? ""
-            initial.intention = entry.intention ?? ""
+            initial.notes = entry.notes ?? entry.intention ?? ""
             initial.mood = entry.mood
             initial.prompt = entry.prompt ?? ""
             initial.quoteID = entry.quoteID
@@ -325,6 +341,7 @@ private struct JournalEditorView: View {
             initial.quoteID = quote.id
         }
         _draft = State(initialValue: initial)
+        _showingNotes = State(initialValue: !initial.notes.isEmpty)
     }
 
     var body: some View {
@@ -357,6 +374,23 @@ private struct JournalEditorView: View {
                         .lineLimit(3...7)
                 } header: {
                     Label("Physical Win", systemImage: "figure.run")
+                }
+                Section {
+                    TextField("Something you are grateful for today…", text: $draft.gratitude, axis: .vertical)
+                        .lineLimit(2...5)
+                } header: {
+                    Label("Gratitude", systemImage: "heart.fill")
+                }
+                Section {
+                    Toggle("Add notes", isOn: $showingNotes)
+                }
+                if showingNotes {
+                    Section {
+                        TextField("Anything else worth remembering…", text: $draft.notes, axis: .vertical)
+                            .lineLimit(3...9)
+                    } header: {
+                        Label("Notes", systemImage: "note.text")
+                    }
                 }
                 photoSection
                 if entry != nil {

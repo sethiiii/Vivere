@@ -22,7 +22,7 @@ struct TodayView: View {
     @State private var showingInsights = false
     @AppStorage("feature.haptics") private var hapticsEnabled = true
     @AppStorage("feature.insights") private var insightsEnabled = true
-    @AppStorage("feature.gallery") private var galleryEnabled = false
+    @AppStorage("feature.gallery") private var galleryEnabled = true
 
     private var todayHabits: [Habit] {
         activeHabits.filter { !$0.isPaused && $0.isScheduled(on: Date()) }

@@ -3,7 +3,7 @@ import SwiftUI
 struct AddHabitView: View {
     @Environment(\.managedObjectContext) private var context
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("feature.advancedHabitOptions") private var advancedOptionsEnabled = false
+    @AppStorage("feature.advancedHabitOptions") private var advancedOptionsEnabled = true
 
     private let habit: Habit?
     @State private var draft: HabitDraft
