@@ -4,6 +4,53 @@ import Testing
 @testable import HabitTracker
 
 struct HabitStatisticsTests {
+    @Test func versionOneStoreMigratesToCurrentModelWithoutLosingHistory() async throws {
+        let bundle = Bundle(for: Habit.self)
+        let modelDirectory = try #require(bundle.url(forResource: "HabitTracker", withExtension: "momd"))
+        let versionOneURL = modelDirectory.appendingPathComponent("HabitTracker.mom")
+        let currentURL = modelDirectory.appendingPathComponent("HabitTracker 3.mom")
+        let versionOneModel = try #require(NSManagedObjectModel(contentsOf: versionOneURL))
+        let currentModel = try #require(NSManagedObjectModel(contentsOf: currentURL))
+
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("HabitTrackerMigration-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
+        let storeURL = temporaryDirectory.appendingPathComponent("Legacy.sqlite")
+
+        let legacyCoordinator = NSPersistentStoreCoordinator(managedObjectModel: versionOneModel)
+        let legacyStore = try legacyCoordinator.addPersistentStore(type: .sqlite, at: storeURL)
+        let legacyContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        legacyContext.persistentStoreCoordinator = legacyCoordinator
+        let completionDate = Date(timeIntervalSince1970: 1_700_000_000)
+        try legacyContext.performAndWait {
+            let habit = NSEntityDescription.insertNewObject(forEntityName: "Habit", into: legacyContext)
+            habit.setValue("Preserved Habit", forKey: "name")
+            habit.setValue(completionDate, forKey: "lastDone")
+            let completion = NSEntityDescription.insertNewObject(forEntityName: "Completion", into: legacyContext)
+            completion.setValue(completionDate, forKey: "date")
+            completion.setValue(habit, forKey: "habit")
+            try legacyContext.save()
+        }
+        try legacyCoordinator.remove(legacyStore)
+
+        let migratedContainer = NSPersistentContainer(name: "HabitTracker", managedObjectModel: currentModel)
+        let description = NSPersistentStoreDescription(url: storeURL)
+        description.shouldMigrateStoreAutomatically = true
+        description.shouldInferMappingModelAutomatically = true
+        migratedContainer.persistentStoreDescriptions = [description]
+        try await loadPersistentStores(for: migratedContainer)
+
+        let migratedContext = migratedContainer.viewContext
+        let habits = try migratedContext.fetch(Habit.fetchRequest())
+        let completions = try migratedContext.fetch(Completion.fetchRequest())
+        #expect(habits.count == 1)
+        #expect(habits.first?.name == "Preserved Habit")
+        #expect(completions.count == 1)
+        #expect(completions.first?.date == completionDate)
+        #expect(completions.first?.habit === habits.first)
+    }
+
     @Test func selectedDayReminderUsesOnlyScheduledWeekdays() {
         let weekdays: HabitWeekdays = [.monday, .wednesday, .friday]
 
@@ -81,6 +128,18 @@ struct HabitStatisticsTests {
         #expect(grid.leadingBlankCount == 5)
         #expect(grid.dates.count == 31)
         #expect(grid.weekdaySymbols.first == "Mon")
+    }
+}
+
+private func loadPersistentStores(for container: NSPersistentContainer) async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+        container.loadPersistentStores { _, error in
+            if let error {
+                continuation.resume(throwing: error)
+            } else {
+                continuation.resume(returning: ())
+            }
+        }
     }
 }
 
