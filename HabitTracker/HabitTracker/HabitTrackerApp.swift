@@ -49,12 +49,14 @@ struct HabitTrackerApp: App {
                 .task(id: persistence.isReady) {
                     guard persistence.isReady else { return }
                     WidgetSnapshotService.refresh(from: persistence.container.viewContext)
+                    WatchSyncService.shared.start(with: persistence.container.viewContext)
                 }
                 .onReceive(NotificationCenter.default.publisher(
                     for: .NSManagedObjectContextDidSave,
                     object: persistence.container.viewContext
                 )) { _ in
                     WidgetSnapshotService.refresh(from: persistence.container.viewContext)
+                    WatchSyncService.shared.refresh(from: persistence.container.viewContext)
                 }
         }
     }
