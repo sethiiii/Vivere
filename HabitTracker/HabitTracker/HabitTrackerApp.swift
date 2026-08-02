@@ -5,6 +5,7 @@ struct HabitTrackerApp: App {
     @StateObject private var persistence = PersistenceController.shared
     @AppStorage("appearance") private var appearance = "system"
     @AppStorage("onboarding.completed") private var onboardingCompleted = false
+    private let isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
 
     var body: some Scene {
         WindowGroup {
@@ -17,7 +18,7 @@ struct HabitTrackerApp: App {
                     appearance == "dark"  ? .dark  : nil
                 )
                 .fullScreenCover(isPresented: Binding(
-                    get: { !onboardingCompleted },
+                    get: { !onboardingCompleted && !isUITesting },
                     set: { if !$0 { onboardingCompleted = true } }
                 )) {
                     OnboardingView(isComplete: $onboardingCompleted)
