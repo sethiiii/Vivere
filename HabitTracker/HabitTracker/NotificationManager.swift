@@ -55,7 +55,9 @@ final class NotificationManager {
 
         let timeComponents = Calendar.current.dateComponents([.hour, .minute], from: time)
         let selectedWeekdays = Self.notificationWeekdays(for: schedule, weekdays: weekdays)
-        let requestWeekdays: [Int?] = selectedWeekdays.isEmpty ? [nil] : selectedWeekdays.map(Optional.some)
+        let requestWeekdays: [Int?] = schedule == .selectedDays
+            ? selectedWeekdays.map(Optional.some)
+            : [nil]
 
         for weekday in requestWeekdays {
             var components = DateComponents()

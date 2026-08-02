@@ -56,7 +56,7 @@ struct AddHabitView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
                         .fontWeight(.semibold)
-                        .disabled(draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(!draftIsValid)
                 }
             }
             .alert("Couldn’t Save Habit", isPresented: errorPresented) {
@@ -139,6 +139,11 @@ struct AddHabitView: View {
 
             if draft.schedule == .selectedDays {
                 weekdayPicker
+                if draft.weekdays.isEmpty {
+                    Label("Choose at least one day", systemImage: "exclamationmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
             } else if draft.schedule == .flexible {
                 Stepper("\(draft.scheduleTarget) times per week", value: $draft.scheduleTarget, in: 1...7)
             }
@@ -220,7 +225,7 @@ struct AddHabitView: View {
 
     private func configureReminder(for habit: Habit) {
         let identifier = habit.id?.uuidString ?? habit.objectID.uriRepresentation().absoluteString
-        if draft.reminderEnabled {
+        if draft.reminderEnabled, !habit.isPaused, !habit.isArchived {
             NotificationManager.shared.authorizeAndScheduleReminder(
                 id: identifier,
                 title: habit.displayName,
@@ -231,6 +236,12 @@ struct AddHabitView: View {
         } else {
             NotificationManager.shared.cancelReminder(id: identifier)
         }
+    }
+
+    private var draftIsValid: Bool {
+        let hasName = !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasScheduleDays = draft.schedule != .selectedDays || !draft.weekdays.isEmpty
+        return hasName && hasScheduleDays
     }
 
     private var errorPresented: Binding<Bool> {

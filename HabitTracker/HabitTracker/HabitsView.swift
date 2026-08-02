@@ -42,6 +42,12 @@ struct HabitsView: View {
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button {
+                                    togglePaused(habit)
+                                } label: {
+                                    Label(habit.isPaused ? "Resume" : "Pause", systemImage: habit.isPaused ? "play" : "pause")
+                                }
+                                .tint(habit.isPaused ? .green : .orange)
+                                Button {
                                     archive(habit)
                                 } label: {
                                     Label("Archive", systemImage: "archivebox")
@@ -55,7 +61,11 @@ struct HabitsView: View {
                                     Label("Delete", systemImage: "trash")
                                 }
                             }
+                            .accessibilityAction(named: habit.isPaused ? "Resume habit" : "Pause habit") {
+                                togglePaused(habit)
+                            }
                         }
+                        .onMove(perform: move)
                     }
                     .listStyle(.insetGrouped)
                 }
@@ -69,7 +79,8 @@ struct HabitsView: View {
                     }
                     .accessibilityLabel("Archived habits")
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if searchText.isEmpty && habits.count > 1 { EditButton() }
                     Button { showingAddHabit = true } label: {
                         Image(systemName: "plus")
                     }
@@ -117,9 +128,11 @@ struct HabitsView: View {
                 .background(habit.tintColor.opacity(0.13), in: RoundedRectangle(cornerRadius: 11))
             VStack(alignment: .leading, spacing: 3) {
                 Text(habit.displayName).font(.body.weight(.medium))
-                Text(streak.current == 0
-                     ? "No active streak"
-                     : "\(streak.current) \(streak.unit.label(for: streak.current)) streak")
+                Text(habit.isPaused
+                     ? "Paused — history is safe"
+                     : streak.current == 0
+                        ? "No active streak"
+                        : "\(streak.current) \(streak.unit.label(for: streak.current)) streak")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -133,6 +146,7 @@ struct HabitsView: View {
             habit.isArchived = true
             habit.updatedAt = Date()
             try HabitStore.save(context)
+            cancelReminder(for: habit)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -140,10 +154,59 @@ struct HabitsView: View {
 
     private func delete(_ habit: Habit) {
         do {
+            cancelReminder(for: habit)
             try HabitStore.delete(habit, in: context)
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func togglePaused(_ habit: Habit) {
+        do {
+            habit.isPaused.toggle()
+            habit.updatedAt = Date()
+            try HabitStore.save(context)
+            if habit.isPaused {
+                cancelReminder(for: habit)
+            } else {
+                restoreReminder(for: habit)
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func move(from source: IndexSet, to destination: Int) {
+        var reordered = Array(habits)
+        reordered.move(fromOffsets: source, toOffset: destination)
+        do {
+            for (index, habit) in reordered.enumerated() {
+                habit.sortOrder = Int64(index)
+                habit.updatedAt = Date()
+            }
+            try HabitStore.save(context)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func reminderIdentifier(for habit: Habit) -> String {
+        habit.id?.uuidString ?? habit.objectID.uriRepresentation().absoluteString
+    }
+
+    private func cancelReminder(for habit: Habit) {
+        NotificationManager.shared.cancelReminder(id: reminderIdentifier(for: habit))
+    }
+
+    private func restoreReminder(for habit: Habit) {
+        guard habit.reminderEnabled, let time = habit.reminderTime else { return }
+        NotificationManager.shared.authorizeAndScheduleReminder(
+            id: reminderIdentifier(for: habit),
+            title: habit.displayName,
+            time: time,
+            schedule: habit.schedule,
+            weekdays: habit.weekdays
+        )
     }
 
     private var errorPresented: Binding<Bool> {
@@ -199,6 +262,16 @@ private struct ArchivedHabitsView: View {
             habit.isArchived = false
             habit.updatedAt = Date()
             try HabitStore.save(context)
+            if habit.reminderEnabled, !habit.isPaused, let time = habit.reminderTime {
+                let identifier = habit.id?.uuidString ?? habit.objectID.uriRepresentation().absoluteString
+                NotificationManager.shared.authorizeAndScheduleReminder(
+                    id: identifier,
+                    title: habit.displayName,
+                    time: time,
+                    schedule: habit.schedule,
+                    weekdays: habit.weekdays
+                )
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
