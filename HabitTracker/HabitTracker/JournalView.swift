@@ -7,6 +7,7 @@ struct JournalView: View {
     @Environment(\.managedObjectContext) private var context
     @AppStorage("quote.category") private var categoryRaw = QuoteCategory.all.rawValue
     @AppStorage("quote.favoriteIDs") private var favoriteQuoteIDs = ""
+    @AppStorage("feature.dailyMotivation") private var dailyMotivationEnabled = true
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \JournalEntry.date, ascending: false)],
         animation: .default
@@ -32,7 +33,9 @@ struct JournalView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 16) {
-                    quoteCard
+                    if dailyMotivationEnabled {
+                        quoteCard
+                    }
                     todayCard
                     recentEntries
                 }
@@ -41,8 +44,14 @@ struct JournalView: View {
             }
             .background(AppTheme.canvas)
             .navigationTitle("Journal")
+            .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $searchText, prompt: "Search your journal")
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Journal")
+                        .font(.system(.title2, design: .serif, weight: .semibold))
+                        .accessibilityAddTraits(.isHeader)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingCalendar = true } label: { Image(systemName: "calendar") }
                         .accessibilityLabel("Journal calendar")
@@ -75,43 +84,39 @@ struct JournalView: View {
     }
 
     private var quoteCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: "quote.opening")
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(.tint)
-                Spacer()
+        ZStack(alignment: .trailing) {
+            Text("“\(quote.text)” — \(quote.author)")
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 28)
+                .accessibilityLabel("Daily motivation. \(quote.text). \(quote.author)")
+
+            Menu {
                 ShareLink(item: shareText(for: quote)) {
-                    Image(systemName: "square.and.arrow.up")
+                    Label("Share Quote", systemImage: "square.and.arrow.up")
                 }
-                .accessibilityLabel("Share today’s quote")
                 Button {
                     favoriteQuoteIDs = QuoteFavorites.toggle(quote.id, in: favoriteQuoteIDs)
                 } label: {
-                    Image(systemName: isFavorite(quote) ? "star.fill" : "star")
-                        .contentTransition(.symbolEffect(.replace))
+                    Label(
+                        isFavorite(quote) ? "Remove from Favorites" : "Add to Favorites",
+                        systemImage: isFavorite(quote) ? "star.slash" : "star"
+                    )
                 }
-                .accessibilityLabel(isFavorite(quote) ? "Remove quote from favorites" : "Add quote to favorites")
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                Text(quote.text)
-                    .font(.body.weight(.medium))
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("— \(quote.author)")
+            } label: {
+                Image(systemName: "ellipsis")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                if let source = quote.source {
-                    Text(source)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
+                    .frame(width: 28, height: 28)
             }
-            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Quote actions")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
-        .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
+        .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .contain)
     }
 

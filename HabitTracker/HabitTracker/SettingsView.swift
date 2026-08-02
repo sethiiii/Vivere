@@ -12,6 +12,7 @@ struct SettingsView: View {
     @AppStorage("feature.gallery") private var galleryEnabled = false
     @AppStorage("feature.journal") private var journalEnabled = true
     @AppStorage("quote.category") private var quoteCategory = QuoteCategory.all.rawValue
+    @AppStorage("feature.dailyMotivation") private var dailyMotivationEnabled = true
     @AppStorage("onboarding.completed") private var onboardingCompleted = false
 
     var body: some View {
@@ -86,9 +87,18 @@ struct SettingsView: View {
 
                 if journalEnabled {
                     Section("Journal") {
-                        Picker("Daily quote category", selection: $quoteCategory) {
-                            ForEach(QuoteCategory.allCases) { category in
-                                Text(category.title).tag(category.rawValue)
+                        Toggle(isOn: $dailyMotivationEnabled) {
+                            settingLabel(
+                                "Daily Motivation",
+                                detail: "A compact quote at the top of Journal",
+                                symbol: "quote.opening"
+                            )
+                        }
+                        if dailyMotivationEnabled {
+                            Picker("Quote category", selection: $quoteCategory) {
+                                ForEach(QuoteCategory.allCases) { category in
+                                    Text(category.title).tag(category.rawValue)
+                                }
                             }
                         }
                         NavigationLink {

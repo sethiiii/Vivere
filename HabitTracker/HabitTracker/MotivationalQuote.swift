@@ -66,8 +66,8 @@ extension MotivationalQuote {
                 source: nil
             )
         }
-        let day = calendar.ordinality(of: .day, in: .era, for: date) ?? 0
-        return pool[abs(day) % pool.count]
+        let day = max(calendar.ordinality(of: .day, in: .era, for: date) ?? 0, 0)
+        return pool[day % pool.count]
     }
 }
 

@@ -69,6 +69,22 @@ struct HabitStatisticsTests {
         #expect(QuoteFavorites.decode(stored) == ["seneca-1"])
     }
 
+    @Test func dailyQuotesUseEveryQuoteBeforeRepeating() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+        let start = try #require(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1)))
+        let quotes = try (0..<MotivationalQuote.library.count).map { offset in
+            let date = try #require(calendar.date(byAdding: .day, value: offset, to: start))
+            return MotivationalQuote.daily(category: .all, on: date, calendar: calendar)
+        }
+        let loopDate = try #require(
+            calendar.date(byAdding: .day, value: MotivationalQuote.library.count, to: start)
+        )
+
+        #expect(Set(quotes.map(\.id)).count == MotivationalQuote.library.count)
+        #expect(MotivationalQuote.daily(category: .all, on: loopDate, calendar: calendar).id == quotes.first?.id)
+    }
+
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!

@@ -16,14 +16,14 @@ final class HabitTrackerUITests: XCTestCase {
     func testCoreNavigationFitsAndRemainsReachable() throws {
         let app = launchApp()
 
-        XCTAssertTrue(app.tabBars.buttons["Habits"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.tabBars.buttons["Journal"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Settings"].exists)
+        XCTAssertTrue(app.buttons["Habits"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Journal"].exists)
+        XCTAssertTrue(app.buttons["Settings"].exists)
 
-        app.tabBars.buttons["Journal"].tap()
+        app.buttons["Journal"].tap()
         XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 2))
 
-        app.tabBars.buttons["Settings"].tap()
+        app.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts["Accent"].waitForExistence(timeout: 2))
     }
@@ -31,7 +31,7 @@ final class HabitTrackerUITests: XCTestCase {
     @MainActor
     func testCreateHabitFromToday() throws {
         let app = launchApp()
-        app.tabBars.buttons["Habits"].tap()
+        app.buttons["Habits"].tap()
         app.navigationBars["Today"].buttons["Add habit"].tap()
 
         let name = "UI Test Habit \(UUID().uuidString.prefix(6))"
