@@ -264,6 +264,7 @@ struct MonthGrid: Equatable {
         leadingBlankCount = (firstWeekday - calendar.firstWeekday + 7) % 7
 
         let symbols = calendar.shortStandaloneWeekdaySymbols
+        guard !symbols.isEmpty else { return nil }
         let startIndex = max(0, min(symbols.count - 1, calendar.firstWeekday - 1))
         weekdaySymbols = Array(symbols[startIndex...] + symbols[..<startIndex])
         dates = dayRange.compactMap {

@@ -9,31 +9,53 @@ struct HabitTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Group {
+                if persistence.isReady {
+                    ContentView()
+                } else if let message = persistence.loadErrorMessage {
+                    StorageUnavailableView(message: message, retry: persistence.retryLoading)
+                } else {
+                    ProgressView("Opening your private data…")
+                        .controlSize(.large)
+                }
+            }
                 .environment(\.managedObjectContext,
                               persistence.container.viewContext)
-                // Apply theme here, on the root view
                 .preferredColorScheme(
                     appearance == "light" ? .light :
                     appearance == "dark"  ? .dark  : nil
                 )
                 .fullScreenCover(isPresented: Binding(
-                    get: { !onboardingCompleted && !isUITesting },
+                    get: { persistence.isReady && !onboardingCompleted && !isUITesting },
                     set: { if !$0 { onboardingCompleted = true } }
                 )) {
                     OnboardingView(isComplete: $onboardingCompleted)
                 }
-                .alert(
-                    "Unable to Open Your Data",
-                    isPresented: Binding(
-                        get: { persistence.loadErrorMessage != nil },
-                        set: { if !$0 { persistence.dismissLoadError() } }
-                    )
-                ) {
-                    Button("OK", role: .cancel) { persistence.dismissLoadError() }
+                .alert("Your Data Needs Attention", isPresented: Binding(
+                    get: { persistence.isReady && persistence.loadErrorMessage != nil },
+                    set: { if !$0 { persistence.dismissLoadError() } }
+                )) {
+                    Button("OK") { persistence.dismissLoadError() }
                 } message: {
-                    Text(persistence.loadErrorMessage ?? "An unknown storage error occurred.")
+                    Text(persistence.loadErrorMessage ?? "HabitTracker couldn’t finish preparing older records.")
                 }
         }
+    }
+}
+
+private struct StorageUnavailableView: View {
+    let message: String
+    let retry: () -> Void
+
+    var body: some View {
+        ContentUnavailableView {
+            Label("Your Data Is Protected", systemImage: "externaldrive.badge.exclamationmark")
+        } description: {
+            Text("HabitTracker couldn’t safely open its local database, so editing is paused to prevent data loss.\n\n\(message)")
+        } actions: {
+            Button("Try Again", action: retry)
+                .buttonStyle(.borderedProminent)
+        }
+        .padding()
     }
 }

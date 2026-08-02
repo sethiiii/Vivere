@@ -5,12 +5,21 @@ final class PersistenceController: ObservableObject {
 
     let container: NSPersistentContainer
     @Published private(set) var loadErrorMessage: String?
+    @Published private(set) var isReady = false
+    private let inMemory: Bool
 
     func dismissLoadError() {
         loadErrorMessage = nil
     }
 
+    func retryLoading() {
+        isReady = false
+        loadErrorMessage = nil
+        loadStores()
+    }
+
     init(inMemory: Bool = false) {
+        self.inMemory = inMemory
         container = NSPersistentContainer(name: "HabitTracker")
         container.persistentStoreDescriptions.forEach { description in
             description.shouldMigrateStoreAutomatically = true
@@ -19,19 +28,28 @@ final class PersistenceController: ObservableObject {
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
         }
+        container.viewContext.automaticallyMergesChangesFromParent = true
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        loadStores()
+    }
+
+    private func loadStores() {
         container.loadPersistentStores { [weak self] _, error in
+            guard let self else { return }
             if let error {
                 let message = "Your data store could not be opened. \(error.localizedDescription)"
                 DispatchQueue.main.async {
-                    self?.loadErrorMessage = message
+                    self.loadErrorMessage = message
+                    self.isReady = false
                 }
-            } else if !inMemory {
-                self?.prepareLegacyRecords()
+            } else {
+                if !self.inMemory { self.prepareLegacyRecords() }
+                DispatchQueue.main.async {
+                    self.loadErrorMessage = nil
+                    self.isReady = true
+                }
             }
         }
-
-        container.viewContext.automaticallyMergesChangesFromParent = true
-        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
     }
 
     private func prepareLegacyRecords() {

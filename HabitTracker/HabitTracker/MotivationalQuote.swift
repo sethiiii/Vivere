@@ -57,6 +57,15 @@ extension MotivationalQuote {
     static func daily(category: QuoteCategory, on date: Date = Date(), calendar: Calendar = .current) -> MotivationalQuote {
         let candidates = category == .all ? library : library.filter { $0.category == category }
         let pool = candidates.isEmpty ? library : candidates
+        guard !pool.isEmpty else {
+            return MotivationalQuote(
+                id: "fallback",
+                text: "Begin again with one small step.",
+                author: "HabitTracker",
+                category: .resilience,
+                source: nil
+            )
+        }
         let day = calendar.ordinality(of: .day, in: .era, for: date) ?? 0
         return pool[abs(day) % pool.count]
     }

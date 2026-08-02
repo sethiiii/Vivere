@@ -404,7 +404,11 @@ private struct JournalEditorView: View {
     private func loadPhoto(_ item: PhotosPickerItem) async {
         do {
             guard let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) else { return }
-            let scale = min(1, 1600 / max(image.size.width, image.size.height))
+            let longestSide = max(image.size.width, image.size.height)
+            guard longestSide.isFinite, longestSide > 0 else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            let scale = min(1, 1600 / longestSide)
             let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
             let renderer = UIGraphicsImageRenderer(size: size)
             let resized = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
@@ -440,6 +444,7 @@ private enum JournalPrompt {
     ]
 
     static func daily(on date: Date = Date(), calendar: Calendar = .current) -> String {
+        guard !prompts.isEmpty else { return "What feels important right now?" }
         let day = calendar.ordinality(of: .day, in: .era, for: date) ?? 0
         return prompts[abs(day) % prompts.count]
     }
