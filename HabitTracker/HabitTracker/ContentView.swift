@@ -1,62 +1,110 @@
 import SwiftUI
-import CoreData
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("feature.journal") private var journalEnabled = true
+    @AppStorage("accentTheme") private var accentTheme = AppAccentTheme.indigo.rawValue
+    @State private var selectedTab = AppTab.habits
 
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Habit.name, ascending: true)],
-        animation: .default)
-    private var habits: FetchedResults<Habit>
-
-    @AppStorage("appearance") private var appearance = "system"
-    @State private var showingAdd = false
-    @State private var showingSettings = false
-
-    var body: some View {
-        NavigationView {
-            List {
-                ForEach(habits, id: \.objectID) { habit in
-                    NavigationLink {
-                        HabitDetailView(habit: habit)
-                    } label: {
-                        HStack {
-                            Text(habit.name ?? "")
-                            Spacer()
-                            Text("\(habit.completions?.count ?? 0)")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-                .onDelete(perform: deleteHabits)
-            }
-            .navigationTitle("Habits")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showingAdd = true } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingAdd) {
-            AddHabitView()
-                .environment(\.managedObjectContext, viewContext)
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
-        }
+    private var selectedAccent: AppAccentTheme {
+        AppAccentTheme(rawValue: accentTheme) ?? .indigo
     }
 
-    private func deleteHabits(offsets: IndexSet) {
-        for index in offsets {
-            viewContext.delete(habits[index])
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            TodayView()
+                .tag(AppTab.habits)
+
+            if journalEnabled {
+                JournalView()
+                    .tag(AppTab.journal)
+            }
+
+            SettingsView()
+                .tag(AppTab.settings)
         }
-        try? viewContext.save()
+        .toolbar(.hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            FloatingTabBar(
+                selectedTab: $selectedTab,
+                tabs: journalEnabled ? AppTab.allCases : [.habits, .settings],
+                reduceMotion: reduceMotion
+            )
+        }
+        .tint(selectedAccent.color)
+    }
+}
+
+private enum AppTab: String, CaseIterable, Identifiable {
+    case habits
+    case journal
+    case settings
+
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+
+    var symbol: String {
+        switch self {
+        case .habits: "checkmark.circle.fill"
+        case .journal: "book.closed.fill"
+        case .settings: "gearshape.fill"
+        }
+    }
+}
+
+private struct FloatingTabBar: View {
+    @Binding var selectedTab: AppTab
+    let tabs: [AppTab]
+    let reduceMotion: Bool
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(tabs) { tab in
+                Button {
+                    if reduceMotion {
+                        selectedTab = tab
+                    } else {
+                        withAnimation(.snappy(duration: 0.26)) { selectedTab = tab }
+                    }
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: tab.symbol)
+                            .font(.system(size: 19, weight: .semibold))
+                        Text(tab.title)
+                            .font(.caption2.weight(.semibold))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.secondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background {
+                        if selectedTab == tab {
+                            Capsule(style: .continuous)
+                                .fill(Color.primary.opacity(0.075))
+                        }
+                    }
+                    .contentShape(Capsule(style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(tab.title)
+                .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+            }
+        }
+        .padding(6)
+        .frame(maxWidth: 390)
+        .background(.ultraThinMaterial, in: Capsule(style: .continuous))
+        .overlay {
+            Capsule(style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+        }
+        .shadow(color: .black.opacity(0.14), radius: 18, y: 8)
+        .padding(.horizontal, 26)
+        .padding(.top, 7)
+        .padding(.bottom, 5)
+        // Keep persistent navigation labels legible at accessibility sizes while
+        // allowing the content behind the bar to honor the user's full setting.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("Main tab bar")
     }
 }

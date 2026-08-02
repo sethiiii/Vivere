@@ -8,34 +8,78 @@
 import XCTest
 
 final class HabitTrackerUITests: XCTestCase {
-
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testCoreNavigationFitsAndRemainsReachable() throws {
+        let app = launchApp()
+
+        XCTAssertTrue(app.buttons["Habits"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Journal"].exists)
+        XCTAssertTrue(app.buttons["Settings"].exists)
+
+        app.buttons["Journal"].tap()
+        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 2))
+
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Accent"].waitForExistence(timeout: 2))
+    }
+
+    @MainActor
+    func testCreateHabitFromToday() throws {
+        let app = launchApp()
+        app.buttons["Habits"].tap()
+        app.navigationBars["Today"].buttons["Add habit"].tap()
+
+        let name = "UI Test Habit \(UUID().uuidString.prefix(6))"
+        let field = app.textFields["Habit name"]
+        XCTAssertTrue(field.waitForExistence(timeout: 2))
+        field.tap()
+        field.typeText(name)
+        app.navigationBars["New Habit"].buttons["Save"].tap()
+
+        XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout: 3))
+    }
+
+    @MainActor
+    func testGalleryProgramCanBeCustomized() throws {
         let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-ui-testing-gallery"]
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let tools = app.navigationBars["Today"].buttons["Habit tools"]
+        XCTAssertTrue(tools.waitForExistence(timeout: 5))
+        tools.tap()
+        app.buttons["Gallery"].tap()
+        XCTAssertTrue(app.navigationBars["Gallery"].waitForExistence(timeout: 3))
+
+        let program = app.staticTexts["75-Day Hard Reset"]
+        XCTAssertTrue(program.waitForExistence(timeout: 3))
+        program.tap()
+        XCTAssertTrue(app.navigationBars["Customize Program"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["Gentle"].exists)
+        XCTAssertTrue(app.staticTexts["Move outdoors"].exists)
+        app.navigationBars["Customize Program"].buttons["Cancel"].tap()
     }
 
     @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
+            let app = XCUIApplication()
+            app.launchArguments = ["-ui-testing"]
+            app.launch()
         }
+    }
+
+    @MainActor
+    private func launchApp() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing"]
+        app.launch()
+        return app
     }
 }

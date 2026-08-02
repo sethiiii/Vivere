@@ -1,13 +1,13 @@
 //
-//  HabitTrackerUITestsLaunchTests.swift
-//  HabitTrackerUITests
+//  HabitTrackerWatch_Watch_AppUITestsLaunchTests.swift
+//  HabitTrackerWatch Watch AppUITests
 //
-//  Created by Hercules S on 5/17/25.
+//  Created by Hercules S on 8/2/26.
 //
 
 import XCTest
 
-final class HabitTrackerUITestsLaunchTests: XCTestCase {
+final class HabitTrackerWatch_Watch_AppUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
@@ -20,8 +20,12 @@ final class HabitTrackerUITestsLaunchTests: XCTestCase {
     @MainActor
     func testLaunch() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-ui-testing"]
         app.launch()
+
+        // Insert steps here to perform after app launch but before taking a screenshot,
+        // such as logging into a test account or navigating somewhere in the app
+        // XCUIAutomation Documentation
+        // https://developer.apple.com/documentation/xcuiautomation
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"

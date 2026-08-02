@@ -1,18 +1,98 @@
 import CoreData
 
-struct PersistenceController {
+final class PersistenceController: ObservableObject {
     static let shared = PersistenceController()
 
     let container: NSPersistentContainer
+    @Published private(set) var loadErrorMessage: String?
+    @Published private(set) var isReady = false
+    private let inMemory: Bool
+
+    func dismissLoadError() {
+        loadErrorMessage = nil
+    }
+
+    func retryLoading() {
+        isReady = false
+        loadErrorMessage = nil
+        loadStores()
+    }
 
     init(inMemory: Bool = false) {
+        self.inMemory = inMemory
         container = NSPersistentContainer(name: "HabitTracker")
-        if inMemory {
-            container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
+        container.persistentStoreDescriptions.forEach { description in
+            description.shouldMigrateStoreAutomatically = true
+            description.shouldInferMappingModelAutomatically = true
         }
-        container.loadPersistentStores { desc, error in
-            if let error = error as NSError? {
-                fatalError("Unresolved Core Data error \(error), \(error.userInfo)")
+        if inMemory {
+            container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
+        }
+        container.viewContext.automaticallyMergesChangesFromParent = true
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        loadStores()
+    }
+
+    private func loadStores() {
+        container.loadPersistentStores { [weak self] _, error in
+            guard let self else { return }
+            if let error {
+                let message = "Your data store could not be opened. \(error.localizedDescription)"
+                DispatchQueue.main.async {
+                    self.loadErrorMessage = message
+                    self.isReady = false
+                }
+            } else {
+                if !self.inMemory { self.prepareLegacyRecords() }
+                DispatchQueue.main.async {
+                    self.loadErrorMessage = nil
+                    self.isReady = true
+                }
+            }
+        }
+    }
+
+    private func prepareLegacyRecords() {
+        let context = container.viewContext
+        context.perform { [weak self] in
+            do {
+                let habits = try context.fetch(Habit.fetchRequest())
+                for habit in habits {
+                    if habit.id == nil { habit.id = UUID() }
+                    if habit.createdAt == nil { habit.createdAt = habit.lastDone ?? Date() }
+                    if habit.updatedAt == nil { habit.updatedAt = habit.createdAt }
+                    if habit.iconName?.isEmpty != false { habit.iconName = "checkmark" }
+                    if habit.tintHex?.isEmpty != false { habit.tintHex = "#5B7CFA" }
+                    if habit.scheduleType?.isEmpty != false { habit.schedule = .daily }
+                    if habit.scheduledWeekdays == 0 { habit.weekdays = .all }
+                    if habit.goalType?.isEmpty != false { habit.goal = .checkIn }
+                    if habit.targetCount < 1 { habit.targetCount = 1 }
+                    if habit.scheduleTarget < 1 { habit.scheduleTarget = 1 }
+                    if habit.timeOfDay?.isEmpty != false { habit.preferredTime = .anytime }
+                }
+
+                let completions = try context.fetch(Completion.fetchRequest())
+                for completion in completions {
+                    if completion.id == nil { completion.id = UUID() }
+                    if completion.createdAt == nil { completion.createdAt = completion.date ?? Date() }
+                    if completion.state?.isEmpty != false { completion.state = "completed" }
+                    if completion.value <= 0 { completion.value = 1 }
+                }
+
+                let journalEntries = try context.fetch(JournalEntry.fetchRequest())
+                for entry in journalEntries {
+                    if entry.id == nil { entry.id = UUID() }
+                    if entry.createdAt == nil { entry.createdAt = entry.date ?? Date() }
+                    if entry.updatedAt == nil { entry.updatedAt = entry.createdAt }
+                    if entry.mood < 1 || entry.mood > 5 { entry.mood = 3 }
+                }
+
+                if context.hasChanges { try context.save() }
+            } catch {
+                context.rollback()
+                DispatchQueue.main.async {
+                    self?.loadErrorMessage = "Your data opened, but legacy records could not be prepared. \(error.localizedDescription)"
+                }
             }
         }
     }
@@ -25,7 +105,11 @@ struct PersistenceController {
             h.name = "Sample \(i)"
             h.lastDone = Date()
         }
-        try! ctx.save()
+        do {
+            try ctx.save()
+        } catch {
+            assertionFailure("Preview store failed to save: \(error)")
+        }
         return result
     }()
 }
