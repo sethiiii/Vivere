@@ -15,6 +15,28 @@ final class NotificationManager {
         }
     }
 
+    func authorizeAndScheduleDailyReminder(id: String, title: String, time: Date) {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { [weak self] settings in
+            switch settings.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                self?.scheduleDailyReminder(id: id, title: title, time: time)
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .sound]) { granted, error in
+                    if granted {
+                        self?.scheduleDailyReminder(id: id, title: title, time: time)
+                    } else if let error {
+                        print("Notification permission error:", error)
+                    }
+                }
+            case .denied:
+                break
+            @unknown default:
+                break
+            }
+        }
+    }
+
     /// Schedule a repeating daily notification at a given time.
     func scheduleDailyReminder(id: String, title: String, time: Date) {
         let center = UNUserNotificationCenter.current()

@@ -1,13 +1,9 @@
 import SwiftUI
-import UserNotifications
+
 @main
 struct HabitTrackerApp: App {
-    let persistence = PersistenceController.shared
+    @StateObject private var persistence = PersistenceController.shared
     @AppStorage("appearance") private var appearance = "system"
-
-    init() {
-        NotificationManager.shared.requestPermission()
-    }
 
     var body: some Scene {
         WindowGroup {
@@ -19,6 +15,17 @@ struct HabitTrackerApp: App {
                     appearance == "light" ? .light :
                     appearance == "dark"  ? .dark  : nil
                 )
+                .alert(
+                    "Unable to Open Your Data",
+                    isPresented: Binding(
+                        get: { persistence.loadErrorMessage != nil },
+                        set: { if !$0 { persistence.dismissLoadError() } }
+                    )
+                ) {
+                    Button("OK", role: .cancel) { persistence.dismissLoadError() }
+                } message: {
+                    Text(persistence.loadErrorMessage ?? "An unknown storage error occurred.")
+                }
         }
     }
 }

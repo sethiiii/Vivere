@@ -18,6 +18,11 @@ extension Completion {
 
     @NSManaged public var date: Date?
     @NSManaged public var habit: Habit?
+    @NSManaged public var id: UUID?
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var note: String?
+    @NSManaged public var state: String?
+    @NSManaged public var value: Double
 
 }
 
