@@ -5,7 +5,7 @@
 <h1 align="center">Vivere</h1>
 
 <p align="center">
-  <em>Vivere</em> — Latin for “to live.” A polished, completely free, local-first companion for intentional living on iPhone and Apple Watch.
+  <em>Vivere</em> — Latin for “to live.” A private, completely free companion for building habits, reflecting daily, and understanding your progress.
 </p>
 
 <p align="center">
@@ -13,31 +13,39 @@
 </p>
 
 <p align="center">
-  <img src="Docs/Screenshots/iphone-today-dark.png" width="220" alt="Vivere Today screen in dark mode">
-  <img src="Docs/Screenshots/iphone-journal-dark.png" width="220" alt="Vivere private Journal screen">
-  <img src="Docs/Screenshots/iphone-settings-dark.png" width="220" alt="Vivere modular Settings screen">
+  <img src="Docs/Screenshots/iphone-today-dark.png" width="190" alt="Vivere Today screen in dark mode">
+  <img src="Docs/Screenshots/iphone-calendar-dark.png" width="190" alt="Vivere activity calendar and daily detail">
+  <img src="Docs/Screenshots/iphone-journal-wins-dark.png" width="190" alt="Vivere Journal with spiritual, mental, and physical wins plus gratitude">
+  <img src="Docs/Screenshots/iphone-settings-dark.png" width="190" alt="Vivere modular Settings and color themes">
+</p>
+
+<p align="center">
+  <img src="Docs/Screenshots/iphone-year-dark.png" width="190" alt="Vivere annual activity heatmap">
   <img src="Docs/Screenshots/watch-today.png" width="170" alt="Vivere Apple Watch companion">
 </p>
 
 ## Built to stay simple—and grow when you need it
 
-Vivere opens to a calm Today screen with one-tap completion. Optional capabilities live behind switches in Settings, so a new user gets a focused tracker while an advanced user can enable schedules, measurable goals, programs, insights, journaling, reminders, and review tools without installing another app.
+Vivere opens to a calm Today screen with one-tap completion. A four-tab floating dock keeps Calendar, Habits, Journal, and Settings close without crowding the interface. Every premium-style module is available and enabled by default, while Settings lets each person simplify the app or grow it into a more advanced system.
 
 ### Everyday experience
 
 - Fast one-tap check-ins with subtle haptics and restrained animation
 - Daily, selected-weekday, and flexible weekly schedules
 - Check-in, count, duration, and avoidance goals
-- Schedule-aware streaks, adherence, history, and calendar detail
+- Schedule-aware streaks, adherence, history, and day-by-day calendar detail
+- Monthly activity intensity plus an interactive annual heatmap across years
+- Daily drill-down showing completed habits with a direct link to that day’s Journal
 - Reordering, pausing, archiving, notes, preferred time, and reminders
-- Full light, dark, system, and six accent-color themes
+- Full light, dark, and system appearance with seven contrast-aware accent themes
 - Dynamic Type, VoiceOver labels, Reduce Motion support, and adaptable layouts
 
 ### Premium-style tools, still free
 
 - Customizable program gallery, including 75-Day Hard Reset and 125-Day Lock In
 - Difficulty levels and editable habits before starting any preset
-- Private daily Journal with search, calendar, prompts, and optional photos
+- Private daily Journal centered on Spiritual, Mental, and Physical wins
+- Gratitude, optional Notes, mood, search, calendar, prompts, and photos
 - Compact daily motivation with categories, favorites, and sharing
 - Quote rotation that uses every enabled quote before repeating
 - Insights and optional weekly reviews
@@ -50,7 +58,13 @@ Vivere opens to a calm Today screen with one-tap completion. Optional capabiliti
 
 The iPhone is the single source of truth. Habits, completions, configuration, and journal entries are stored in Core Data on the device. The Watch receives a compact cached snapshot and sends idempotent completion requests through WatchConnectivity; it never opens or migrates the iPhone database.
 
-The project includes lightweight migration from the original V1 store through the current V3 model, plus readable JSON backup and merge-based restore. Existing data is preserved whenever the model can be safely opened.
+The project includes lightweight migration from the original V1 store through the current V4 model, plus readable JSON backup and merge-based restore. Existing data is preserved whenever the model can be safely opened.
+
+## Privacy
+
+Vivere has no account system, advertising identifier, analytics SDK, telemetry client, hosted database, or AI/bot connection. Habit and Journal content stays in the app’s local Core Data store. The optional widget uses an Apple App Group on the same device, and the Watch companion exchanges only a compact habit snapshot and completion requests through Apple’s WatchConnectivity framework.
+
+Backups leave the app only when the user explicitly exports one through the system document picker. Journal photos are selected explicitly and stored with the local entry. See [PRIVACY.md](PRIVACY.md) for the complete plain-language policy.
 
 ## Apple frameworks only
 
