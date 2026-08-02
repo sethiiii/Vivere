@@ -91,6 +91,11 @@ struct SettingsView: View {
                                 Text(category.title).tag(category.rawValue)
                             }
                         }
+                        NavigationLink {
+                            FavoriteQuotesView()
+                        } label: {
+                            settingLabel("Favorite Quotes", detail: "Saved inspiration for any day", symbol: "star")
+                        }
                     }
                 }
 
@@ -126,6 +131,56 @@ struct SettingsView: View {
                 .foregroundStyle(AppTheme.accent)
                 .frame(width: 24)
         }
+    }
+}
+
+private struct FavoriteQuotesView: View {
+    @AppStorage("quote.favoriteIDs") private var favoriteQuoteIDs = ""
+
+    private var quotes: [MotivationalQuote] {
+        let identifiers = QuoteFavorites.decode(favoriteQuoteIDs)
+        return MotivationalQuote.library.filter { identifiers.contains($0.id) }
+    }
+
+    var body: some View {
+        Group {
+            if quotes.isEmpty {
+                ContentUnavailableView(
+                    "No Favorite Quotes",
+                    systemImage: "star",
+                    description: Text("Tap the star on a daily quote to keep it here.")
+                )
+            } else {
+                List(quotes) { quote in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(quote.text)
+                            .font(.body.weight(.medium))
+                        Text("— \(quote.author)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        HStack {
+                            if let source = quote.source {
+                                Text(source).font(.caption).foregroundStyle(.tertiary)
+                            }
+                            Spacer()
+                            ShareLink(item: "“\(quote.text)” — \(quote.author)") {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                            Button(role: .destructive) {
+                                favoriteQuoteIDs = QuoteFavorites.toggle(quote.id, in: favoriteQuoteIDs)
+                            } label: {
+                                Image(systemName: "star.slash")
+                            }
+                            .accessibilityLabel("Remove \(quote.author) quote from favorites")
+                        }
+                    }
+                    .padding(.vertical, 5)
+                    .accessibilityElement(children: .contain)
+                }
+            }
+        }
+        .navigationTitle("Favorite Quotes")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

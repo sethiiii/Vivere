@@ -60,6 +60,15 @@ struct HabitStatisticsTests {
         #expect(NotificationManager.requestIdentifiers(for: "habit").contains("habit.weekday.6"))
     }
 
+    @Test func quoteFavoritesToggleAndRoundTrip() {
+        var stored = QuoteFavorites.toggle("aurelius-1", in: "")
+        stored = QuoteFavorites.toggle("seneca-1", in: stored)
+        #expect(QuoteFavorites.decode(stored) == ["aurelius-1", "seneca-1"])
+
+        stored = QuoteFavorites.toggle("aurelius-1", in: stored)
+        #expect(QuoteFavorites.decode(stored) == ["seneca-1"])
+    }
+
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!

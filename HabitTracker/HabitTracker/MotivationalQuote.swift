@@ -56,7 +56,28 @@ extension MotivationalQuote {
 
     static func daily(category: QuoteCategory, on date: Date = Date(), calendar: Calendar = .current) -> MotivationalQuote {
         let candidates = category == .all ? library : library.filter { $0.category == category }
+        let pool = candidates.isEmpty ? library : candidates
         let day = calendar.ordinality(of: .day, in: .era, for: date) ?? 0
-        return candidates[abs(day) % max(1, candidates.count)]
+        return pool[abs(day) % pool.count]
+    }
+}
+
+enum QuoteFavorites {
+    static func decode(_ storedValue: String) -> Set<String> {
+        Set(storedValue.split(separator: "|").map(String.init))
+    }
+
+    static func encode(_ identifiers: Set<String>) -> String {
+        identifiers.sorted().joined(separator: "|")
+    }
+
+    static func toggle(_ identifier: String, in storedValue: String) -> String {
+        var identifiers = decode(storedValue)
+        if identifiers.contains(identifier) {
+            identifiers.remove(identifier)
+        } else {
+            identifiers.insert(identifier)
+        }
+        return encode(identifiers)
     }
 }

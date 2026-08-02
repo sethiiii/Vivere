@@ -6,6 +6,7 @@ import UIKit
 struct JournalView: View {
     @Environment(\.managedObjectContext) private var context
     @AppStorage("quote.category") private var categoryRaw = QuoteCategory.all.rawValue
+    @AppStorage("quote.favoriteIDs") private var favoriteQuoteIDs = ""
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \JournalEntry.date, ascending: false)],
         animation: .default
@@ -66,20 +67,50 @@ struct JournalView: View {
 
     private var quoteCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Image(systemName: "quote.opening")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.tint)
-            Text(quote.text)
-                .font(.title3.weight(.medium))
-                .fixedSize(horizontal: false, vertical: true)
-            Text("— \(quote.author)")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+            HStack {
+                Image(systemName: "quote.opening")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.tint)
+                Spacer()
+                ShareLink(item: shareText(for: quote)) {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .accessibilityLabel("Share today’s quote")
+                Button {
+                    favoriteQuoteIDs = QuoteFavorites.toggle(quote.id, in: favoriteQuoteIDs)
+                } label: {
+                    Image(systemName: isFavorite(quote) ? "star.fill" : "star")
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .accessibilityLabel(isFavorite(quote) ? "Remove quote from favorites" : "Add quote to favorites")
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text(quote.text)
+                    .font(.title3.weight(.medium))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("— \(quote.author)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                if let source = quote.source {
+                    Text(source)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .accessibilityElement(children: .combine)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(22)
         .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func isFavorite(_ quote: MotivationalQuote) -> Bool {
+        QuoteFavorites.decode(favoriteQuoteIDs).contains(quote.id)
+    }
+
+    private func shareText(for quote: MotivationalQuote) -> String {
+        "“\(quote.text)” — \(quote.author)"
     }
 
     private var todayCard: some View {
