@@ -27,7 +27,7 @@ extension JournalEntry: Identifiable {
     }
 
     var previewText: String {
-        let candidates = [body, gratitude, intention]
+        let candidates = [gratitude, body, intention]
         return candidates.compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .first { !$0.isEmpty } ?? "A quiet space for your thoughts."
     }

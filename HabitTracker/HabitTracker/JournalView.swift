@@ -16,6 +16,7 @@ struct JournalView: View {
     @State private var editingEntry: JournalEntry?
     @State private var showingTodayEditor = false
     @State private var showingCalendar = false
+    @State private var showingFullQuote = false
 
     private var quote: MotivationalQuote {
         MotivationalQuote.daily(category: QuoteCategory(rawValue: categoryRaw) ?? .all)
@@ -73,6 +74,11 @@ struct JournalView: View {
                 JournalCalendarView()
                     .environment(\.managedObjectContext, context)
             }
+            .alert("Daily Motivation", isPresented: $showingFullQuote) {
+                Button("Done", role: .cancel) {}
+            } message: {
+                Text("“\(quote.text)” — \(quote.author)")
+            }
         }
     }
 
@@ -86,10 +92,12 @@ struct JournalView: View {
     private var quoteCard: some View {
         ZStack(alignment: .trailing) {
             Text("“\(quote.text)” — \(quote.author)")
-                .font(.footnote.weight(.medium))
+                .font(quoteCardFont.weight(.medium))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
+                .minimumScaleFactor(0.78)
+                .allowsTightening(true)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 28)
                 .accessibilityLabel("Daily motivation. \(quote.text). \(quote.author)")
@@ -106,6 +114,9 @@ struct JournalView: View {
                         systemImage: isFavorite(quote) ? "star.slash" : "star"
                     )
                 }
+                Button { showingFullQuote = true } label: {
+                    Label("Read Full Quote", systemImage: "text.quote")
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.caption.weight(.semibold))
@@ -118,6 +129,11 @@ struct JournalView: View {
         .padding(.horizontal, 10)
         .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .contain)
+    }
+
+    private var quoteCardFont: Font {
+        let length = quote.text.count + quote.author.count
+        return length > 118 ? .caption2 : (length > 88 ? .caption : .footnote)
     }
 
     private func isFavorite(_ quote: MotivationalQuote) -> Bool {
@@ -319,17 +335,28 @@ private struct JournalEditorView: View {
                     TextField("Title (optional)", text: $draft.title)
                     moodPicker
                 }
-                Section(draft.prompt) {
-                    TextField("Write without editing yourself…", text: $draft.body, axis: .vertical)
-                        .lineLimit(8...18)
+                Section {
+                    Text("Record one honest win in each area. Small wins count.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-                Section("Gratitude") {
-                    TextField("Something I appreciate…", text: $draft.gratitude, axis: .vertical)
-                        .lineLimit(2...5)
+                Section {
+                    TextField("A moment of faith, gratitude, purpose, or inner peace…", text: $draft.spiritualWin, axis: .vertical)
+                        .lineLimit(3...7)
+                } header: {
+                    Label("Spiritual Win", systemImage: "sparkles")
                 }
-                Section("Tomorrow") {
-                    TextField("One clear intention…", text: $draft.intention, axis: .vertical)
-                        .lineLimit(2...5)
+                Section {
+                    TextField("Something you learned, understood, focused on, or handled well…", text: $draft.mentalWin, axis: .vertical)
+                        .lineLimit(3...7)
+                } header: {
+                    Label("Mental Win", systemImage: "brain.head.profile")
+                }
+                Section {
+                    TextField("Movement, recovery, nourishment, sleep, or another act of care…", text: $draft.physicalWin, axis: .vertical)
+                        .lineLimit(3...7)
+                } header: {
+                    Label("Physical Win", systemImage: "figure.run")
                 }
                 photoSection
                 if entry != nil {

@@ -11,6 +11,23 @@ struct JournalDraft {
     var prompt = ""
     var quoteID: String?
     var photoData: Data?
+
+    // These semantic aliases preserve the existing Core Data columns, so the
+    // three-wins journal can ship without a risky persistence migration.
+    var spiritualWin: String {
+        get { gratitude }
+        set { gratitude = newValue }
+    }
+
+    var mentalWin: String {
+        get { body }
+        set { body = newValue }
+    }
+
+    var physicalWin: String {
+        get { intention }
+        set { intention = newValue }
+    }
 }
 
 enum JournalStoreError: LocalizedError {

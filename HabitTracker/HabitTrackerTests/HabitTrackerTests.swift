@@ -338,17 +338,21 @@ struct HabitStoreTests {
         let (_, context) = makeStore()
         var first = JournalDraft()
         first.date = Date(timeIntervalSince1970: 1_785_652_800)
-        first.body = "Morning reflection"
+        first.spiritualWin = "Stayed grateful"
+        first.mentalWin = "Morning reflection"
+        first.physicalWin = "Walked outside"
         try JournalStore.save(first, in: context)
 
         var update = first
-        update.body = "Updated reflection"
+        update.mentalWin = "Updated reflection"
         try JournalStore.save(update, in: context)
 
         let entries = try context.fetch(JournalEntry.fetchRequest())
         let backup = try HabitBackupService.makeBackup(from: context)
         #expect(entries.count == 1)
         #expect(entries.first?.body == "Updated reflection")
+        #expect(entries.first?.gratitude == "Stayed grateful")
+        #expect(entries.first?.intention == "Walked outside")
         #expect(backup.journalEntries?.count == 1)
     }
 

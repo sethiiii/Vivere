@@ -11,25 +11,27 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack {
-            TodayView()
-                .opacity(selectedTab == .habits ? 1 : 0)
-                .allowsHitTesting(selectedTab == .habits)
-                .accessibilityHidden(selectedTab != .habits)
+        ZStack(alignment: .bottom) {
+            ZStack {
+                TodayView()
+                    .opacity(selectedTab == .habits ? 1 : 0)
+                    .allowsHitTesting(selectedTab == .habits)
+                    .accessibilityHidden(selectedTab != .habits)
 
-            if journalEnabled {
-                JournalView()
-                    .opacity(selectedTab == .journal ? 1 : 0)
-                    .allowsHitTesting(selectedTab == .journal)
-                    .accessibilityHidden(selectedTab != .journal)
+                if journalEnabled {
+                    JournalView()
+                        .opacity(selectedTab == .journal ? 1 : 0)
+                        .allowsHitTesting(selectedTab == .journal)
+                        .accessibilityHidden(selectedTab != .journal)
+                }
+
+                SettingsView()
+                    .opacity(selectedTab == .settings ? 1 : 0)
+                    .allowsHitTesting(selectedTab == .settings)
+                    .accessibilityHidden(selectedTab != .settings)
             }
+            .safeAreaPadding(.bottom, 76)
 
-            SettingsView()
-                .opacity(selectedTab == .settings ? 1 : 0)
-                .allowsHitTesting(selectedTab == .settings)
-                .accessibilityHidden(selectedTab != .settings)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
             FloatingTabBar(
                 selectedTab: $selectedTab,
                 tabs: journalEnabled ? AppTab.allCases : [.habits, .settings],
