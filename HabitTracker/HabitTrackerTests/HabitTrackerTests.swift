@@ -335,4 +335,53 @@ struct HabitStoreTests {
         #expect(entries.first?.body == "Updated reflection")
         #expect(backup.journalEntries?.count == 1)
     }
+
+    @Test func programCreationIsAtomicAndAppliesDuration() throws {
+        let (_, context) = makeStore()
+        var first = HabitDraft()
+        first.name = "Move"
+        var second = HabitDraft()
+        second.name = "Read"
+
+        let created = try HabitStore.createProgram(
+            drafts: [first, second],
+            programTitle: "Foundation",
+            durationDays: 30,
+            in: context
+        )
+        #expect(created.count == 2)
+        #expect(created.allSatisfy { $0.notes?.contains("Foundation") == true })
+        let daySpan = Calendar.current.dateComponents(
+            [.day],
+            from: try #require(created.first?.startDate),
+            to: try #require(created.first?.endDate)
+        ).day
+        #expect(daySpan == 29)
+
+        var invalid = HabitDraft()
+        invalid.name = "   "
+        #expect(throws: HabitStoreError.self) {
+            try HabitStore.createProgram(
+                drafts: [first, invalid],
+                programTitle: "Invalid",
+                durationDays: 10,
+                in: context
+            )
+        }
+        let stored = try context.fetch(Habit.fetchRequest())
+        #expect(stored.count == 2)
+    }
+
+    @Test func programDifficultyAdjustsTargetsWithoutChangingPreset() throws {
+        let program = try #require(HabitProgram.catalog.first { $0.id == "foundation-30" })
+        let selected = Set(program.habits.map(\.id))
+        let gentle = program.drafts(selectedIDs: selected, difficulty: .gentle)
+        let intense = program.drafts(selectedIDs: selected, difficulty: .intense)
+        let gentleWalk = try #require(gentle.first { $0.name == "Daily walk" })
+        let intenseWalk = try #require(intense.first { $0.name == "Daily walk" })
+
+        #expect(gentleWalk.targetCount == 15)
+        #expect(intenseWalk.targetCount == 25)
+        #expect(program.habits.first { $0.id == "30-walk" }?.target == 20)
+    }
 }

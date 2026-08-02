@@ -58,13 +58,13 @@ struct SettingsView: View {
 
                 Section {
                     Toggle(isOn: $insightsEnabled) {
-                        settingLabel("Insights", detail: "Trends, streaks, and consistency", symbol: "chart.xyaxis.line")
+                        settingLabel("Insights", detail: "Trends and reviews in Habit tools", symbol: "chart.xyaxis.line")
                     }
                     Toggle(isOn: $advancedHabitOptions) {
                         settingLabel("Advanced Habit Tools", detail: "Schedules, goals, notes, and more", symbol: "slider.horizontal.3")
                     }
                     Toggle(isOn: $galleryEnabled) {
-                        settingLabel("Gallery", detail: "Curated templates and guided experiments", symbol: "sparkles.rectangle.stack")
+                        settingLabel("Gallery", detail: "Programs and presets in Habit tools", symbol: "sparkles.rectangle.stack")
                     }
                     Toggle(isOn: $journalEnabled) {
                         settingLabel("Journal", detail: "Daily pages, prompts, photos, and quotes", symbol: "book.closed")

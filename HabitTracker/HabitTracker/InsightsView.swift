@@ -9,12 +9,18 @@ private struct DailyCompletionTotal: Identifiable {
 }
 
 struct InsightsView: View {
+    @Environment(\.dismiss) private var dismiss
+    let presentedModally: Bool
     @AppStorage("feature.weeklyReview") private var weeklyReviewEnabled = false
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Habit.name, ascending: true)],
         predicate: NSPredicate(format: "isArchived == NO"),
         animation: .default
     ) private var habits: FetchedResults<Habit>
+
+    init(presentedModally: Bool = false) {
+        self.presentedModally = presentedModally
+    }
 
     private var totalCompletions: Int {
         habits.reduce(0) { $0 + HabitStatistics(completionDates: $1.achievedCompletionDates).totalCompletions }
@@ -62,6 +68,11 @@ struct InsightsView: View {
             }
             .background(AppTheme.canvas)
             .navigationTitle("Insights")
+            .toolbar {
+                if presentedModally {
+                    ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                }
+            }
         }
     }
 

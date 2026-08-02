@@ -7,6 +7,12 @@ struct HabitTrackerApp: App {
     @AppStorage("onboarding.completed") private var onboardingCompleted = false
     private let isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
 
+    init() {
+        if ProcessInfo.processInfo.arguments.contains("-ui-testing-gallery") {
+            UserDefaults.standard.set(true, forKey: "feature.gallery")
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {

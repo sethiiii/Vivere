@@ -43,30 +43,41 @@ enum HabitStore {
         editing existingHabit: Habit? = nil,
         in context: NSManagedObjectContext
     ) throws -> Habit {
-        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { throw HabitStoreError.emptyName }
-
         let habit = existingHabit ?? Habit(context: context)
-        habit.name = name
-        let now = Date()
-        if habit.id == nil { habit.id = UUID() }
-        if habit.createdAt == nil { habit.createdAt = now }
-        habit.updatedAt = now
-        habit.iconName = draft.iconName
-        habit.tintHex = draft.tintHex
-        habit.schedule = draft.schedule
-        habit.weekdays = draft.schedule == .daily ? .all : draft.weekdays
-        habit.scheduleTarget = max(1, min(7, draft.scheduleTarget))
-        habit.goal = draft.goal
-        habit.targetCount = max(1, draft.targetCount)
-        habit.unitName = draft.unitName.trimmingCharacters(in: .whitespacesAndNewlines)
-        habit.preferredTime = draft.preferredTime
-        habit.reminderEnabled = draft.reminderEnabled
-        habit.reminderTime = draft.reminderEnabled ? draft.reminderTime : nil
-        habit.notes = draft.notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        if habit.startDate == nil { habit.startDate = Calendar.current.startOfDay(for: now) }
+        try configure(habit, with: draft)
         try save(context)
         return habit
+    }
+
+    @discardableResult
+    static func createProgram(
+        drafts: [HabitDraft],
+        programTitle: String,
+        durationDays: Int,
+        in context: NSManagedObjectContext,
+        calendar: Calendar = .current
+    ) throws -> [Habit] {
+        guard !drafts.isEmpty else { return [] }
+        let start = calendar.startOfDay(for: Date())
+        let end = calendar.date(byAdding: .day, value: max(1, durationDays) - 1, to: start)
+        var created: [Habit] = []
+        do {
+            for draft in drafts {
+                let habit = Habit(context: context)
+                try configure(habit, with: draft)
+                habit.startDate = start
+                habit.endDate = end
+                let detail = draft.notes.trimmingCharacters(in: .whitespacesAndNewlines)
+                habit.notes = detail.isEmpty ? "Part of \(programTitle)." : "\(detail)\n\nPart of \(programTitle)."
+                created.append(habit)
+            }
+            try save(context)
+            return created
+        } catch {
+            created.forEach { if !$0.isDeleted { context.delete($0) } }
+            context.rollback()
+            throw error
+        }
     }
 
     @discardableResult
@@ -174,6 +185,29 @@ enum HabitStore {
             context.rollback()
             throw error
         }
+    }
+
+    private static func configure(_ habit: Habit, with draft: HabitDraft) throws {
+        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { throw HabitStoreError.emptyName }
+        let now = Date()
+        habit.name = name
+        if habit.id == nil { habit.id = UUID() }
+        if habit.createdAt == nil { habit.createdAt = now }
+        habit.updatedAt = now
+        habit.iconName = draft.iconName
+        habit.tintHex = draft.tintHex
+        habit.schedule = draft.schedule
+        habit.weekdays = draft.schedule == .daily ? .all : draft.weekdays
+        habit.scheduleTarget = max(1, min(7, draft.scheduleTarget))
+        habit.goal = draft.goal
+        habit.targetCount = max(1, draft.targetCount)
+        habit.unitName = draft.unitName.trimmingCharacters(in: .whitespacesAndNewlines)
+        habit.preferredTime = draft.preferredTime
+        habit.reminderEnabled = draft.reminderEnabled
+        habit.reminderTime = draft.reminderEnabled ? draft.reminderTime : nil
+        habit.notes = draft.notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        if habit.startDate == nil { habit.startDate = Calendar.current.startOfDay(for: now) }
     }
 
     private static func updateLastDone(

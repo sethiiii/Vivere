@@ -17,7 +17,12 @@ struct TodayView: View {
     @State private var errorMessage: String?
     @State private var feedbackTrigger = 0
     @State private var habitToCheckIn: Habit?
+    @State private var showingAllHabits = false
+    @State private var showingGallery = false
+    @State private var showingInsights = false
     @AppStorage("feature.haptics") private var hapticsEnabled = true
+    @AppStorage("feature.insights") private var insightsEnabled = true
+    @AppStorage("feature.gallery") private var galleryEnabled = false
 
     private var todayHabits: [Habit] {
         activeHabits.filter { !$0.isPaused && $0.isScheduled(on: Date()) }
@@ -51,6 +56,26 @@ struct TodayView: View {
             .background(AppTheme.canvas)
             .navigationTitle("Today")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Button { showingAllHabits = true } label: {
+                            Label("All Habits", systemImage: "square.grid.2x2")
+                        }
+                        if insightsEnabled {
+                            Button { showingInsights = true } label: {
+                                Label("Insights", systemImage: "chart.xyaxis.line")
+                            }
+                        }
+                        if galleryEnabled {
+                            Button { showingGallery = true } label: {
+                                Label("Gallery", systemImage: "sparkles.rectangle.stack")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "square.grid.2x2")
+                    }
+                    .accessibilityLabel("Habit tools")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingAddHabit = true
@@ -66,6 +91,18 @@ struct TodayView: View {
             }
             .sheet(item: $habitToCheckIn) { habit in
                 CheckInView(habit: habit)
+                    .environment(\.managedObjectContext, context)
+            }
+            .sheet(isPresented: $showingAllHabits) {
+                HabitsView(presentedModally: true)
+                    .environment(\.managedObjectContext, context)
+            }
+            .sheet(isPresented: $showingGallery) {
+                GalleryView(presentedModally: true)
+                    .environment(\.managedObjectContext, context)
+            }
+            .sheet(isPresented: $showingInsights) {
+                InsightsView(presentedModally: true)
                     .environment(\.managedObjectContext, context)
             }
             .sensoryFeedback(.success, trigger: feedbackTrigger)

@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct ContentView: View {
-    @AppStorage("feature.insights") private var insightsEnabled = true
-    @AppStorage("feature.gallery") private var galleryEnabled = false
     @AppStorage("feature.journal") private var journalEnabled = true
     @AppStorage("accentTheme") private var accentTheme = AppAccentTheme.indigo.rawValue
 
@@ -13,24 +11,11 @@ struct ContentView: View {
     var body: some View {
         TabView {
             TodayView()
-                .tabItem { Label("Today", systemImage: "checkmark.circle") }
-
-            HabitsView()
-                .tabItem { Label("Habits", systemImage: "square.grid.2x2") }
-
-            if galleryEnabled {
-                GalleryView()
-                    .tabItem { Label("Gallery", systemImage: "sparkles.rectangle.stack") }
-            }
+                .tabItem { Label("Habits", systemImage: "checkmark.circle") }
 
             if journalEnabled {
                 JournalView()
                     .tabItem { Label("Journal", systemImage: "book.closed") }
-            }
-
-            if insightsEnabled {
-                InsightsView()
-                    .tabItem { Label("Insights", systemImage: "chart.xyaxis.line") }
             }
 
             SettingsView()

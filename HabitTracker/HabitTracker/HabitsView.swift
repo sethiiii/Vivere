@@ -3,6 +3,8 @@ import SwiftUI
 
 struct HabitsView: View {
     @Environment(\.managedObjectContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    let presentedModally: Bool
     @FetchRequest(
         sortDescriptors: [
             NSSortDescriptor(keyPath: \Habit.sortOrder, ascending: true),
@@ -17,6 +19,10 @@ struct HabitsView: View {
     @State private var pendingDeletion: Habit?
     @State private var errorMessage: String?
     @State private var showingArchive = false
+
+    init(presentedModally: Bool = false) {
+        self.presentedModally = presentedModally
+    }
 
     private var filteredHabits: [Habit] {
         guard !searchText.isEmpty else { return Array(habits) }
@@ -74,10 +80,13 @@ struct HabitsView: View {
             .searchable(text: $searchText, prompt: "Search habits")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button { showingArchive = true } label: {
-                        Image(systemName: "archivebox")
+                    HStack {
+                        if presentedModally { Button("Done") { dismiss() } }
+                        Button { showingArchive = true } label: {
+                            Image(systemName: "archivebox")
+                        }
+                        .accessibilityLabel("Archived habits")
                     }
-                    .accessibilityLabel("Archived habits")
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if searchText.isEmpty && habits.count > 1 { EditButton() }
