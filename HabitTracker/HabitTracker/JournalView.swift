@@ -75,10 +75,10 @@ struct JournalView: View {
     }
 
     private var quoteCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: "quote.opening")
-                    .font(.title3.weight(.semibold))
+                    .font(.callout.weight(.semibold))
                     .foregroundStyle(.tint)
                 Spacer()
                 ShareLink(item: shareText(for: quote)) {
@@ -93,24 +93,25 @@ struct JournalView: View {
                 }
                 .accessibilityLabel(isFavorite(quote) ? "Remove quote from favorites" : "Add quote to favorites")
             }
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(quote.text)
-                    .font(.title3.weight(.medium))
+                    .font(.body.weight(.medium))
+                    .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("— \(quote.author)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 if let source = quote.source {
                     Text(source)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
             }
             .accessibilityElement(children: .combine)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(22)
-        .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(18)
+        .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .accessibilityElement(children: .contain)
     }
 

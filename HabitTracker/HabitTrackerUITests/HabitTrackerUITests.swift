@@ -25,7 +25,7 @@ final class HabitTrackerUITests: XCTestCase {
 
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.staticTexts["Appearance"].exists)
+        XCTAssertTrue(app.staticTexts["Accent"].waitForExistence(timeout: 2))
     }
 
     @MainActor
