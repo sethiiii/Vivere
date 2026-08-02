@@ -101,6 +101,9 @@ private struct FloatingTabBar: View {
         .padding(.horizontal, 26)
         .padding(.top, 7)
         .padding(.bottom, 5)
+        // Keep persistent navigation labels legible at accessibility sizes while
+        // allowing the content behind the bar to honor the user's full setting.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("Main tab bar")
     }
