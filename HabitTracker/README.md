@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="HabitTracker/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png" width="112" alt="Vivere app icon">
+  <img src="Docs/Brand/vivere-icon-bw-v2.png" width="112" alt="Vivere black-and-white app icon">
 </p>
 
 <h1 align="center">Vivere</h1>
@@ -13,15 +13,15 @@
 </p>
 
 <p align="center">
-  <img src="Docs/Screenshots/iphone-today-dark.png" width="190" alt="Vivere Today screen in dark mode">
-  <img src="Docs/Screenshots/iphone-calendar-dark.png" width="190" alt="Vivere activity calendar and daily detail">
-  <img src="Docs/Screenshots/iphone-journal-wins-dark.png" width="190" alt="Vivere Journal with spiritual, mental, and physical wins plus gratitude">
-  <img src="Docs/Screenshots/iphone-settings-dark.png" width="190" alt="Vivere modular Settings and color themes">
+  <img src="Docs/Screenshots/vivere-today-v2.png" width="190" alt="Vivere Today screen with four-tab navigation">
+  <img src="Docs/Screenshots/vivere-calendar-v2.png" width="190" alt="Vivere activity calendar and daily detail">
+  <img src="Docs/Screenshots/vivere-journal-wins-v2.png" width="190" alt="Vivere Journal with spiritual, mental, and physical wins plus gratitude">
+  <img src="Docs/Screenshots/vivere-settings-v2.png" width="190" alt="Vivere modular Settings and color themes">
 </p>
 
 <p align="center">
-  <img src="Docs/Screenshots/iphone-year-dark.png" width="190" alt="Vivere annual activity heatmap">
-  <img src="Docs/Screenshots/watch-today.png" width="170" alt="Vivere Apple Watch companion">
+  <img src="Docs/Screenshots/vivere-year-v2.png" width="190" alt="Vivere annual activity heatmap">
+  <img src="Docs/Screenshots/vivere-watch-v2.png" width="170" alt="Vivere Apple Watch companion">
 </p>
 
 ## Built to stay simple—and grow when you need it

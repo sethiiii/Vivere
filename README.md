@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="HabitTracker/HabitTracker/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png" width="112" alt="Vivere app icon">
+  <img src="HabitTracker/Docs/Brand/vivere-icon-bw-v2.png" width="112" alt="Vivere black-and-white app icon">
 </p>
 
 <h1 align="center">Vivere</h1>
 
 <p align="center">
-  <em>Vivere</em> — Latin for “to live.” A polished, completely free, local-first companion for intentional living on iPhone and Apple Watch.
+  <em>Vivere</em> — Latin for “to live.” A private, completely free companion for building habits, reflecting daily, and understanding your progress.
 </p>
 
 <p align="center">
@@ -13,31 +13,39 @@
 </p>
 
 <p align="center">
-  <img src="HabitTracker/Docs/Screenshots/iphone-today-dark.png" width="220" alt="Vivere Today screen in dark mode">
-  <img src="HabitTracker/Docs/Screenshots/iphone-journal-dark.png" width="220" alt="Vivere private Journal screen">
-  <img src="HabitTracker/Docs/Screenshots/iphone-settings-dark.png" width="220" alt="Vivere modular Settings screen">
-  <img src="HabitTracker/Docs/Screenshots/watch-today.png" width="170" alt="Vivere Apple Watch companion">
+  <img src="HabitTracker/Docs/Screenshots/vivere-today-v2.png" width="190" alt="Vivere Today screen with four-tab navigation">
+  <img src="HabitTracker/Docs/Screenshots/vivere-calendar-v2.png" width="190" alt="Vivere activity calendar and daily detail">
+  <img src="HabitTracker/Docs/Screenshots/vivere-journal-wins-v2.png" width="190" alt="Vivere Journal with spiritual, mental, and physical wins plus gratitude">
+  <img src="HabitTracker/Docs/Screenshots/vivere-settings-v2.png" width="190" alt="Vivere modular Settings and color themes">
+</p>
+
+<p align="center">
+  <img src="HabitTracker/Docs/Screenshots/vivere-year-v2.png" width="190" alt="Vivere annual activity heatmap">
+  <img src="HabitTracker/Docs/Screenshots/vivere-watch-v2.png" width="170" alt="Vivere Apple Watch companion">
 </p>
 
 ## Built to stay simple—and grow when you need it
 
-Vivere opens to a calm Today screen with one-tap completion. Optional capabilities live behind switches in Settings, so a new user gets a focused tracker while an advanced user can enable schedules, measurable goals, programs, insights, journaling, reminders, and review tools without installing another app.
+Vivere opens to a calm Today screen with one-tap completion. A four-tab floating dock keeps Calendar, Habits, Journal, and Settings close without crowding the interface. Every premium-style module is available and enabled by default, while Settings lets each person simplify the app or grow it into a more advanced system.
 
 ### Everyday experience
 
 - Fast one-tap check-ins with subtle haptics and restrained animation
 - Daily, selected-weekday, and flexible weekly schedules
 - Check-in, count, duration, and avoidance goals
-- Schedule-aware streaks, adherence, history, and calendar detail
+- Schedule-aware streaks, adherence, history, and day-by-day calendar detail
+- Monthly activity intensity plus an interactive annual heatmap across years
+- Daily drill-down showing completed habits with a direct link to that day’s Journal
 - Reordering, pausing, archiving, notes, preferred time, and reminders
-- Full light, dark, system, and six accent-color themes
+- Full light, dark, and system appearance with seven contrast-aware accent themes
 - Dynamic Type, VoiceOver labels, Reduce Motion support, and adaptable layouts
 
 ### Premium-style tools, still free
 
 - Customizable program gallery, including 75-Day Hard Reset and 125-Day Lock In
 - Difficulty levels and editable habits before starting any preset
-- Private daily Journal with search, calendar, prompts, and optional photos
+- Private daily Journal centered on Spiritual, Mental, and Physical wins
+- Gratitude, optional Notes, mood, search, calendar, prompts, and photos
 - Compact daily motivation with categories, favorites, and sharing
 - Quote rotation that uses every enabled quote before repeating
 - Insights and optional weekly reviews
@@ -50,7 +58,13 @@ Vivere opens to a calm Today screen with one-tap completion. Optional capabiliti
 
 The iPhone is the single source of truth. Habits, completions, configuration, and journal entries are stored in Core Data on the device. The Watch receives a compact cached snapshot and sends idempotent completion requests through WatchConnectivity; it never opens or migrates the iPhone database.
 
-The project includes lightweight migration from the original V1 store through the current V3 model, plus readable JSON backup and merge-based restore. Existing data is preserved whenever the model can be safely opened.
+The project includes lightweight migration from the original V1 store through the current V4 model, plus readable JSON backup and merge-based restore. Existing data is preserved whenever the model can be safely opened.
+
+## Privacy
+
+Vivere has no account system, advertising identifier, analytics SDK, telemetry client, hosted database, or AI/bot connection. Habit and Journal content stays in the app’s local Core Data store. The optional widget uses an Apple App Group on the same device, and the Watch companion exchanges only a compact habit snapshot and completion requests through Apple’s WatchConnectivity framework.
+
+Backups leave the app only when the user explicitly exports one through the system document picker. Journal photos are selected explicitly and stored with the local entry. See the complete [Vivere Privacy Policy](HabitTracker/PRIVACY.md).
 
 ## Apple frameworks only
 
@@ -84,17 +98,17 @@ The Watch app is embedded in the iPhone target. To test it, select the `HabitTra
 
 ## Validation
 
-The release-candidate build has been checked with:
+The release candidate has been checked with:
 
-- Clean iPhone + widget + Watch simulator builds
+- Clean iPhone, widget, and Watch simulator builds
 - 21 iPhone unit and migration tests
 - Watch snapshot/model unit test and launch UI test
 - Full iPhone 12 UI suite, including repeated launch and launch performance
 - iPhone 16 Pro Max portrait, landscape, light, and dark checks
 - Static analyzer and Address Sanitizer
-- V1-to-V3 Core Data migration coverage
+- V1-to-V4 Core Data migration coverage
 - Accessibility-extra-large Dynamic Type visual verification
-- Live paired-simulator iPhone → Watch sync and Watch → iPhone completion
+- Live paired-simulator iPhone-to-Watch sync and Watch-to-iPhone completion
 - Simulator crash-report and fault-log review
 
 ## Project status
