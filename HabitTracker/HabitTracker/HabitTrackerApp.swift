@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreData
 
 @main
 struct HabitTrackerApp: App {
@@ -44,6 +45,16 @@ struct HabitTrackerApp: App {
                     Button("OK") { persistence.dismissLoadError() }
                 } message: {
                     Text(persistence.loadErrorMessage ?? "HabitTracker couldn’t finish preparing older records.")
+                }
+                .task(id: persistence.isReady) {
+                    guard persistence.isReady else { return }
+                    WidgetSnapshotService.refresh(from: persistence.container.viewContext)
+                }
+                .onReceive(NotificationCenter.default.publisher(
+                    for: .NSManagedObjectContextDidSave,
+                    object: persistence.container.viewContext
+                )) { _ in
+                    WidgetSnapshotService.refresh(from: persistence.container.viewContext)
                 }
         }
     }
