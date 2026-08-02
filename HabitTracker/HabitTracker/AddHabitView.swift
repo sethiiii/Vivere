@@ -164,7 +164,7 @@ struct AddHabitView: View {
         }
 
         Section("Reminder") {
-            Toggle("Daily reminder", isOn: $draft.reminderEnabled)
+            Toggle(draft.schedule == .selectedDays ? "Remind on scheduled days" : "Daily reminder", isOn: $draft.reminderEnabled)
             if draft.reminderEnabled {
                 DatePicker("Time", selection: $draft.reminderTime, displayedComponents: .hourAndMinute)
             }
@@ -221,10 +221,12 @@ struct AddHabitView: View {
     private func configureReminder(for habit: Habit) {
         let identifier = habit.id?.uuidString ?? habit.objectID.uriRepresentation().absoluteString
         if draft.reminderEnabled {
-            NotificationManager.shared.authorizeAndScheduleDailyReminder(
+            NotificationManager.shared.authorizeAndScheduleReminder(
                 id: identifier,
                 title: habit.displayName,
-                time: draft.reminderTime
+                time: draft.reminderTime,
+                schedule: draft.schedule,
+                weekdays: draft.weekdays
             )
         } else {
             NotificationManager.shared.cancelReminder(id: identifier)

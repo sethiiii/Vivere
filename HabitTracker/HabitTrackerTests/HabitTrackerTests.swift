@@ -4,6 +4,15 @@ import Testing
 @testable import HabitTracker
 
 struct HabitStatisticsTests {
+    @Test func selectedDayReminderUsesOnlyScheduledWeekdays() {
+        let weekdays: HabitWeekdays = [.monday, .wednesday, .friday]
+
+        #expect(NotificationManager.notificationWeekdays(for: .selectedDays, weekdays: weekdays) == [2, 4, 6])
+        #expect(NotificationManager.notificationWeekdays(for: .daily, weekdays: weekdays).isEmpty)
+        #expect(NotificationManager.requestIdentifiers(for: "habit").count == 8)
+        #expect(NotificationManager.requestIdentifiers(for: "habit").contains("habit.weekday.6"))
+    }
+
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!

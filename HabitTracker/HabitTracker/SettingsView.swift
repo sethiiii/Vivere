@@ -12,6 +12,7 @@ struct SettingsView: View {
     @AppStorage("feature.gallery") private var galleryEnabled = false
     @AppStorage("feature.journal") private var journalEnabled = true
     @AppStorage("quote.category") private var quoteCategory = QuoteCategory.all.rawValue
+    @AppStorage("onboarding.completed") private var onboardingCompleted = false
 
     var body: some View {
         NavigationStack {
@@ -103,6 +104,7 @@ struct SettingsView: View {
 
                 Section {
                     LabeledContent("Version", value: "1.0")
+                    Button("View Welcome Tour") { onboardingCompleted = false }
                 } header: {
                     Text("About")
                 } footer: {
