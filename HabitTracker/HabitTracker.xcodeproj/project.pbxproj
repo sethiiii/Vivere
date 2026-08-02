@@ -106,7 +106,6 @@
 		DDFFEC1F2DD8A36E00A1D97B /* Exceptions for "HabitTracker" folder in "HabitTracker" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Assets.xcassets,
 				HabitTracker.xcdatamodeld,
 			);
 			target = DD618EBF2DD878BB0014A60C /* HabitTracker */;

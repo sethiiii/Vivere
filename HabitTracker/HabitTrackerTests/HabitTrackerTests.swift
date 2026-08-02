@@ -8,7 +8,7 @@ struct HabitStatisticsTests {
         let bundle = Bundle(for: Habit.self)
         let modelDirectory = try #require(bundle.url(forResource: "HabitTracker", withExtension: "momd"))
         let versionOneURL = modelDirectory.appendingPathComponent("HabitTracker.mom")
-        let currentURL = modelDirectory.appendingPathComponent("HabitTracker 3.mom")
+        let currentURL = modelDirectory.appendingPathComponent("HabitTracker 4.mom")
         let versionOneModel = try #require(NSManagedObjectModel(contentsOf: versionOneURL))
         let currentModel = try #require(NSManagedObjectModel(contentsOf: currentURL))
 

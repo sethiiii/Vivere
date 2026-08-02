@@ -12,7 +12,6 @@ struct ActivityCalendarView: View {
     ) private var journalEntries: FetchedResults<JournalEntry>
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.colorScheme) private var colorScheme
     @AppStorage("accentTheme") private var accentTheme = AppAccentTheme.indigo.rawValue
     @State private var displayedMonth = Calendar.current.startOfDay(for: Date())
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
@@ -272,10 +271,7 @@ struct ActivityCalendarView: View {
 
     private var highIntensityForeground: Color {
         let theme = AppAccentTheme(rawValue: accentTheme) ?? .indigo
-        if theme == .monochrome {
-            return colorScheme == .dark ? .black : .white
-        }
-        return .white
+        return theme == .ocean ? .black : .white
     }
 
     private func changeMonth(by amount: Int) {
