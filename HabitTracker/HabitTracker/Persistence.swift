@@ -61,6 +61,14 @@ final class PersistenceController: ObservableObject {
                     if completion.value <= 0 { completion.value = 1 }
                 }
 
+                let journalEntries = try context.fetch(JournalEntry.fetchRequest())
+                for entry in journalEntries {
+                    if entry.id == nil { entry.id = UUID() }
+                    if entry.createdAt == nil { entry.createdAt = entry.date ?? Date() }
+                    if entry.updatedAt == nil { entry.updatedAt = entry.createdAt }
+                    if entry.mood < 1 || entry.mood > 5 { entry.mood = 3 }
+                }
+
                 if context.hasChanges { try context.save() }
             } catch {
                 context.rollback()

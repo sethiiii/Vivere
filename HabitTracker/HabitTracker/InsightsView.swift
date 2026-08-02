@@ -9,6 +9,7 @@ private struct DailyCompletionTotal: Identifiable {
 }
 
 struct InsightsView: View {
+    @AppStorage("feature.weeklyReview") private var weeklyReviewEnabled = false
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Habit.name, ascending: true)],
         predicate: NSPredicate(format: "isArchived == NO"),
@@ -39,18 +40,58 @@ struct InsightsView: View {
         }
     }
 
+    private var startOfWeek: Date {
+        Calendar.current.date(byAdding: .day, value: -6, to: Calendar.current.startOfDay(for: Date())) ?? Date()
+    }
+
+    private var weeklyAdherence: HabitAdherence {
+        let values = habits.map { HabitAdherence(habit: $0, from: startOfWeek) }
+        return HabitAdherence(expected: values.reduce(0) { $0 + $1.expected }, achieved: values.reduce(0) { $0 + $1.achieved })
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
                     summaryGrid
                     weeklyChart
+                    if weeklyReviewEnabled { weeklyReview }
                     habitPerformance
                 }
                 .padding(20)
             }
             .background(AppTheme.canvas)
             .navigationTitle("Insights")
+        }
+    }
+
+    private var weeklyReview: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label("Weekly Review", systemImage: "calendar.badge.checkmark")
+                    .font(.headline)
+                Spacer()
+                Text("\(weeklyAdherence.percentage)%")
+                    .font(.title3.bold().monospacedDigit())
+            }
+            ProgressView(value: Double(weeklyAdherence.achieved), total: Double(max(1, weeklyAdherence.expected)))
+            Text(weeklyReviewMessage)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            LabeledContent("Completed", value: "\(weeklyAdherence.achieved) of \(weeklyAdherence.expected) planned")
+                .font(.subheadline)
+        }
+        .padding(18)
+        .background(AppTheme.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    private var weeklyReviewMessage: String {
+        switch weeklyAdherence.percentage {
+        case 90...: "A remarkably steady week. Protect what made showing up easy."
+        case 70..<90: "Strong momentum. Notice which routines fit naturally into your days."
+        case 40..<70: "Progress is visible. Make the next action smaller and easier to begin."
+        default: "No judgment—use this week as information and restart with one gentle commitment."
         }
     }
 
@@ -111,12 +152,15 @@ struct InsightsView: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(habits, id: \.objectID) { habit in
-                    let stats = HabitStatistics(completionDates: habit.achievedCompletionDates)
+                    let adherence = HabitAdherence(
+                        habit: habit,
+                        from: Calendar.current.date(byAdding: .day, value: -29, to: Date()) ?? Date()
+                    )
                     HStack {
                         Circle().fill(habit.tintColor).frame(width: 9, height: 9)
                         Text(habit.displayName).lineLimit(1)
                         Spacer()
-                        Text("\(stats.consistencyPercentage)%")
+                        Text("\(adherence.percentage)%")
                             .font(.subheadline.weight(.semibold).monospacedDigit())
                             .foregroundStyle(.secondary)
                     }

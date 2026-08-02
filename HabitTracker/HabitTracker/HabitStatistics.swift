@@ -82,6 +82,56 @@ struct HabitStatistics: Equatable {
     }
 }
 
+struct HabitAdherence: Equatable {
+    let expected: Int
+    let achieved: Int
+
+    init(expected: Int, achieved: Int) {
+        self.expected = max(0, expected)
+        self.achieved = max(0, min(achieved, expected))
+    }
+
+    var percentage: Int {
+        guard expected > 0 else { return 0 }
+        return min(100, max(0, Int((Double(achieved) / Double(expected) * 100).rounded())))
+    }
+
+    init(
+        habit: Habit,
+        from rawStart: Date,
+        through rawEnd: Date = Date(),
+        calendar: Calendar = .current
+    ) {
+        let start = calendar.startOfDay(for: rawStart)
+        let end = calendar.startOfDay(for: rawEnd)
+        guard start <= end else {
+            expected = 0
+            achieved = 0
+            return
+        }
+
+        var dates: [Date] = []
+        var cursor = start
+        while cursor <= end {
+            dates.append(cursor)
+            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+
+        switch habit.schedule {
+        case .daily, .selectedDays:
+            let opportunities = dates.filter { habit.isScheduled(on: $0, calendar: calendar) }
+            expected = opportunities.count
+            achieved = opportunities.filter { habit.isComplete(on: $0, calendar: calendar) }.count
+        case .flexible:
+            let elapsedDays = dates.count
+            let proratedTarget = Int(ceil(Double(elapsedDays) / 7.0 * Double(max(1, habit.scheduleTarget))))
+            expected = min(elapsedDays, proratedTarget)
+            achieved = min(expected, dates.filter { habit.isComplete(on: $0, calendar: calendar) }.count)
+        }
+    }
+}
+
 struct MonthGrid: Equatable {
     let month: Date
     let weekdaySymbols: [String]

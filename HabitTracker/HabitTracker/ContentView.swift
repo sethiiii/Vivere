@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @AppStorage("feature.insights") private var insightsEnabled = true
     @AppStorage("feature.gallery") private var galleryEnabled = false
+    @AppStorage("feature.journal") private var journalEnabled = true
     @AppStorage("accentTheme") private var accentTheme = AppAccentTheme.indigo.rawValue
 
     private var selectedAccent: AppAccentTheme {
@@ -20,6 +21,11 @@ struct ContentView: View {
             if galleryEnabled {
                 GalleryView()
                     .tabItem { Label("Gallery", systemImage: "sparkles.rectangle.stack") }
+            }
+
+            if journalEnabled {
+                JournalView()
+                    .tabItem { Label("Journal", systemImage: "book.closed") }
             }
 
             if insightsEnabled {

@@ -6,6 +6,7 @@ struct HabitBackup: Codable {
     let formatVersion: Int
     let exportedAt: Date
     let habits: [HabitRecord]
+    let journalEntries: [JournalRecord]?
 
     struct HabitRecord: Codable {
         let id: UUID
@@ -40,6 +41,21 @@ struct HabitBackup: Codable {
         let note: String?
         let state: String?
         let value: Double
+    }
+
+    struct JournalRecord: Codable {
+        let id: UUID
+        let date: Date
+        let createdAt: Date?
+        let updatedAt: Date?
+        let title: String?
+        let body: String?
+        let gratitude: String?
+        let intention: String?
+        let mood: Int16
+        let prompt: String?
+        let quoteID: String?
+        let photoData: Data?
     }
 }
 
@@ -120,7 +136,24 @@ enum HabitBackupService {
                 }
             )
         }
-        return HabitBackup(formatVersion: 1, exportedAt: Date(), habits: records)
+        let journals = try context.fetch(JournalEntry.fetchRequest()).compactMap { entry -> HabitBackup.JournalRecord? in
+            guard let date = entry.date else { return nil }
+            return HabitBackup.JournalRecord(
+                id: entry.id ?? UUID(),
+                date: date,
+                createdAt: entry.createdAt,
+                updatedAt: entry.updatedAt,
+                title: entry.title,
+                body: entry.body,
+                gratitude: entry.gratitude,
+                intention: entry.intention,
+                mood: entry.mood,
+                prompt: entry.prompt,
+                quoteID: entry.quoteID,
+                photoData: entry.photoData
+            )
+        }
+        return HabitBackup(formatVersion: 1, exportedAt: Date(), habits: records, journalEntries: journals)
     }
 
     static func restore(_ backup: HabitBackup, into context: NSManagedObjectContext) throws -> Int {
@@ -173,6 +206,27 @@ enum HabitBackupService {
                 completion.habit = habit
                 completionsByID[completionRecord.id] = completion
             }
+        }
+        let existingJournals = try context.fetch(JournalEntry.fetchRequest())
+        var journalsByID: [UUID: JournalEntry] = [:]
+        existingJournals.forEach { entry in
+            if let id = entry.id { journalsByID[id] = entry }
+        }
+        for record in backup.journalEntries ?? [] {
+            let entry = journalsByID[record.id] ?? JournalEntry(context: context)
+            entry.id = record.id
+            entry.date = record.date
+            entry.createdAt = record.createdAt
+            entry.updatedAt = record.updatedAt
+            entry.title = record.title
+            entry.body = record.body
+            entry.gratitude = record.gratitude
+            entry.intention = record.intention
+            entry.mood = record.mood
+            entry.prompt = record.prompt
+            entry.quoteID = record.quoteID
+            entry.photoData = record.photoData
+            journalsByID[record.id] = entry
         }
         try HabitStore.save(context)
         return backup.habits.count

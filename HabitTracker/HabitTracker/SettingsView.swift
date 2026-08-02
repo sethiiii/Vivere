@@ -10,6 +10,8 @@ struct SettingsView: View {
     @AppStorage("feature.haptics") private var hapticsEnabled = true
     @AppStorage("feature.weeklyReview") private var weeklyReviewEnabled = false
     @AppStorage("feature.gallery") private var galleryEnabled = false
+    @AppStorage("feature.journal") private var journalEnabled = true
+    @AppStorage("quote.category") private var quoteCategory = QuoteCategory.all.rawValue
 
     var body: some View {
         NavigationStack {
@@ -63,6 +65,9 @@ struct SettingsView: View {
                     Toggle(isOn: $galleryEnabled) {
                         settingLabel("Gallery", detail: "Curated templates and guided experiments", symbol: "sparkles.rectangle.stack")
                     }
+                    Toggle(isOn: $journalEnabled) {
+                        settingLabel("Journal", detail: "Daily pages, prompts, photos, and quotes", symbol: "book.closed")
+                    }
                     Toggle(isOn: $weeklyReviewEnabled) {
                         settingLabel("Weekly Review", detail: "A calm summary of your progress", symbol: "calendar.badge.clock")
                     }
@@ -75,6 +80,16 @@ struct SettingsView: View {
                 Section("Feedback") {
                     Toggle(isOn: $hapticsEnabled) {
                         settingLabel("Haptics", detail: "Subtle feedback for check-ins", symbol: "waveform")
+                    }
+                }
+
+                if journalEnabled {
+                    Section("Journal") {
+                        Picker("Daily quote category", selection: $quoteCategory) {
+                            ForEach(QuoteCategory.allCases) { category in
+                                Text(category.title).tag(category.rawValue)
+                            }
+                        }
                     }
                 }
 

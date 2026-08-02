@@ -1,4 +1,4 @@
-import CoreData
+@preconcurrency import CoreData
 import Foundation
 import Testing
 @testable import HabitTracker
@@ -101,18 +101,15 @@ struct HabitStoreTests {
     }
 
     @Test func deletingHabitRemovesItsCompletions() throws {
-        let (persistence, context) = makeStore()
+        let (_, context) = makeStore()
         let habit = try HabitStore.createHabit(named: "Walk", in: context)
         try HabitStore.toggleCompletion(for: habit, in: context)
         #expect(habit.validCompletions.count == 1)
 
         try HabitStore.delete(habit, in: context)
 
-        let verificationContext = persistence.container.newBackgroundContext()
         let request: NSFetchRequest<Completion> = Completion.fetchRequest()
-        let remainingCount = try verificationContext.performAndWait {
-            try verificationContext.count(for: request)
-        }
+        let remainingCount = try context.fetch(request).count
         #expect(remainingCount == 0)
     }
 
@@ -176,5 +173,42 @@ struct HabitStoreTests {
         #expect(habits.count == 1)
         #expect(habits.first?.displayName == "Read")
         #expect(habits.first?.validCompletions.first?.note == "Chapter one")
+    }
+
+    @Test func adherenceOnlyCountsSelectedScheduleDays() throws {
+        let (_, context) = makeStore()
+        var draft = HabitDraft()
+        draft.name = "Weekday walk"
+        draft.schedule = .selectedDays
+        draft.weekdays = [.monday, .wednesday, .friday]
+        let habit = try HabitStore.save(draft, in: context)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let monday = try #require(calendar.date(from: DateComponents(year: 2026, month: 8, day: 3)))
+        let sunday = try #require(calendar.date(byAdding: .day, value: 6, to: monday))
+        try HabitStore.toggleCompletion(for: habit, on: monday, calendar: calendar, in: context)
+
+        let adherence = HabitAdherence(habit: habit, from: monday, through: sunday, calendar: calendar)
+        #expect(adherence.expected == 3)
+        #expect(adherence.achieved == 1)
+        #expect(adherence.percentage == 33)
+    }
+
+    @Test func journalMaintainsOneEntryPerDayAndBackupIncludesIt() throws {
+        let (_, context) = makeStore()
+        var first = JournalDraft()
+        first.date = Date(timeIntervalSince1970: 1_785_652_800)
+        first.body = "Morning reflection"
+        try JournalStore.save(first, in: context)
+
+        var update = first
+        update.body = "Updated reflection"
+        try JournalStore.save(update, in: context)
+
+        let entries = try context.fetch(JournalEntry.fetchRequest())
+        let backup = try HabitBackupService.makeBackup(from: context)
+        #expect(entries.count == 1)
+        #expect(entries.first?.body == "Updated reflection")
+        #expect(backup.journalEntries?.count == 1)
     }
 }
