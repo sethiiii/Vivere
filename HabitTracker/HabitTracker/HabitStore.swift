@@ -162,10 +162,7 @@ enum HabitStore {
     }
 
     static func delete(_ habits: [Habit], in context: NSManagedObjectContext) throws {
-        habits.forEach { habit in
-            habit.validCompletions.forEach(context.delete)
-            context.delete(habit)
-        }
+        habits.forEach(context.delete)
         try save(context)
     }
 

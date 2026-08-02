@@ -25,7 +25,7 @@ final class PersistenceController: ObservableObject {
                 DispatchQueue.main.async {
                     self?.loadErrorMessage = message
                 }
-            } else {
+            } else if !inMemory {
                 self?.prepareLegacyRecords()
             }
         }

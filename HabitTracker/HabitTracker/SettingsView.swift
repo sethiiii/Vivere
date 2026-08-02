@@ -1,4 +1,6 @@
+import CoreData
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @AppStorage("appearance") private var appearance = "system"
@@ -111,6 +113,13 @@ struct SettingsView: View {
 }
 
 private struct DataPrivacyView: View {
+    @Environment(\.managedObjectContext) private var context
+    @State private var exportDocument: HabitBackupDocument?
+    @State private var showingExporter = false
+    @State private var showingImporter = false
+    @State private var statusMessage: String?
+    @State private var errorMessage: String?
+
     var body: some View {
         List {
             Section {
@@ -120,11 +129,69 @@ private struct DataPrivacyView: View {
                 Label("No account required", systemImage: "person.crop.circle.badge.xmark")
             }
             Section {
-                Text("Export and restore controls will live here, using standard Apple share and file tools.")
-                    .foregroundStyle(.secondary)
+                Button {
+                    prepareExport()
+                } label: {
+                    Label("Export Backup", systemImage: "square.and.arrow.up")
+                }
+                Button {
+                    showingImporter = true
+                } label: {
+                    Label("Restore from Backup", systemImage: "arrow.clockwise.icloud")
+                }
+            } header: {
+                Text("Backup & Restore")
+            } footer: {
+                Text("Backups are readable JSON files. Restore merges matching records and does not erase habits already on this device.")
             }
         }
         .navigationTitle("Your Data")
         .navigationBarTitleDisplayMode(.inline)
+        .fileExporter(
+            isPresented: $showingExporter,
+            document: exportDocument,
+            contentType: .json,
+            defaultFilename: "HabitTracker Backup"
+        ) { result in
+            if case .failure(let error) = result { errorMessage = error.localizedDescription }
+        }
+        .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json]) { result in
+            restore(result)
+        }
+        .alert("Backup", isPresented: Binding(
+            get: { statusMessage != nil },
+            set: { if !$0 { statusMessage = nil } }
+        )) { Button("OK") { statusMessage = nil } } message: {
+            Text(statusMessage ?? "Done")
+        }
+        .alert("Couldn’t Complete Backup", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) { Button("OK") { errorMessage = nil } } message: {
+            Text(errorMessage ?? "Please try again.")
+        }
+    }
+
+    private func prepareExport() {
+        do {
+            exportDocument = HabitBackupDocument(backup: try HabitBackupService.makeBackup(from: context))
+            showingExporter = true
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func restore(_ result: Result<URL, Error>) {
+        do {
+            let url = try result.get()
+            let accessed = url.startAccessingSecurityScopedResource()
+            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+            let data = try Data(contentsOf: url)
+            let backup = try HabitBackupCodec.decoder.decode(HabitBackup.self, from: data)
+            let count = try HabitBackupService.restore(backup, into: context)
+            statusMessage = "Restored \(count) habit\(count == 1 ? "" : "s") and merged their history."
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }

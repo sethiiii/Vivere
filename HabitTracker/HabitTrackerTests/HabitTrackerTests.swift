@@ -108,9 +108,12 @@ struct HabitStoreTests {
 
         try HabitStore.delete(habit, in: context)
 
-        context.reset()
+        let verificationContext = persistence.container.newBackgroundContext()
         let request: NSFetchRequest<Completion> = Completion.fetchRequest()
-        #expect(try persistence.container.viewContext.count(for: request) == 0)
+        let remainingCount = try verificationContext.performAndWait {
+            try verificationContext.count(for: request)
+        }
+        #expect(remainingCount == 0)
     }
 
     @Test func emptyNamesAreRejected() throws {
@@ -154,5 +157,24 @@ struct HabitStoreTests {
 
         #expect(habit.isScheduled(on: monday, calendar: calendar))
         #expect(!habit.isScheduled(on: tuesday, calendar: calendar))
+    }
+
+    @Test func backupRoundTripPreservesHabitAndHistory() throws {
+        let (_, sourceContext) = makeStore()
+        let habit = try HabitStore.createHabit(named: "Read", in: sourceContext)
+        let day = Date(timeIntervalSince1970: 1_785_652_800)
+        try HabitStore.recordCompletion(for: habit, on: day, value: 1, note: "Chapter one", in: sourceContext)
+        let backup = try HabitBackupService.makeBackup(from: sourceContext)
+        let encoded = try HabitBackupCodec.encoder.encode(backup)
+        let decoded = try HabitBackupCodec.decoder.decode(HabitBackup.self, from: encoded)
+
+        let (_, destinationContext) = makeStore()
+        let restoredCount = try HabitBackupService.restore(decoded, into: destinationContext)
+        let habits = try destinationContext.fetch(Habit.fetchRequest())
+
+        #expect(restoredCount == 1)
+        #expect(habits.count == 1)
+        #expect(habits.first?.displayName == "Read")
+        #expect(habits.first?.validCompletions.first?.note == "Chapter one")
     }
 }
