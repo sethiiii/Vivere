@@ -108,7 +108,7 @@ struct HabitsView: View {
     }
 
     private func habitRow(_ habit: Habit) -> some View {
-        let statistics = HabitStatistics(completionDates: habit.achievedCompletionDates)
+        let streak = HabitScheduleStreak(habit: habit)
         return HStack(spacing: 13) {
             Image(systemName: habit.displayIcon)
                 .font(.body.weight(.semibold))
@@ -117,9 +117,9 @@ struct HabitsView: View {
                 .background(habit.tintColor.opacity(0.13), in: RoundedRectangle(cornerRadius: 11))
             VStack(alignment: .leading, spacing: 3) {
                 Text(habit.displayName).font(.body.weight(.medium))
-                Text(statistics.currentStreak == 0
+                Text(streak.current == 0
                      ? "No active streak"
-                     : "\(statistics.currentStreak) day streak")
+                     : "\(streak.current) \(streak.unit.label(for: streak.current)) streak")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

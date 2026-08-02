@@ -196,9 +196,8 @@ private struct HabitTodayCard: View {
     @ObservedObject var habit: Habit
     let toggle: () -> Void
 
-    private var statistics: HabitStatistics {
-        HabitStatistics(completionDates: habit.achievedCompletionDates)
-    }
+    private var statistics: HabitStatistics { HabitStatistics(completionDates: habit.achievedCompletionDates) }
+    private var streak: HabitScheduleStreak { HabitScheduleStreak(habit: habit) }
 
     private var isCompleted: Bool { habit.isComplete(on: Date()) }
 
@@ -231,8 +230,8 @@ private struct HabitTodayCard: View {
                             .font(.body.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(2)
-                        if statistics.currentStreak > 0 {
-                            Label("\(statistics.currentStreak)", systemImage: "flame.fill")
+                        if streak.current > 0 {
+                            Label("\(streak.current)", systemImage: "flame.fill")
                                 .labelStyle(.titleAndIcon)
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.orange)

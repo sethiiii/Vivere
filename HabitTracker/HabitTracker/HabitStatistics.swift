@@ -132,6 +132,120 @@ struct HabitAdherence: Equatable {
     }
 }
 
+struct HabitScheduleStreak: Equatable {
+    enum Unit: Equatable {
+        case checkIn
+        case week
+
+        func label(for value: Int) -> String {
+            switch self {
+            case .checkIn: value == 1 ? "check-in" : "check-ins"
+            case .week: value == 1 ? "week" : "weeks"
+            }
+        }
+    }
+
+    let current: Int
+    let longest: Int
+    let unit: Unit
+
+    private init(current: Int, longest: Int, unit: Unit) {
+        self.current = max(0, current)
+        self.longest = max(0, longest)
+        self.unit = unit
+    }
+
+    init(habit: Habit, relativeTo referenceDate: Date = Date(), calendar: Calendar = .current) {
+        switch habit.schedule {
+        case .daily, .selectedDays:
+            self = Self.scheduledDayStreak(habit: habit, relativeTo: referenceDate, calendar: calendar)
+        case .flexible:
+            self = Self.flexibleWeekStreak(habit: habit, relativeTo: referenceDate, calendar: calendar)
+        }
+    }
+
+    private static func scheduledDayStreak(
+        habit: Habit,
+        relativeTo referenceDate: Date,
+        calendar: Calendar
+    ) -> HabitScheduleStreak {
+        let today = calendar.startOfDay(for: referenceDate)
+        let completed = Set(habit.achievedCompletionDates.map { calendar.startOfDay(for: $0) }.filter { $0 <= today })
+        guard let firstCompletion = completed.min() else {
+            return HabitScheduleStreak(current: 0, longest: 0, unit: .checkIn)
+        }
+        let rawStart = habit.startDate.map { calendar.startOfDay(for: $0) } ?? firstCompletion
+        let start = min(rawStart, firstCompletion)
+        var opportunities: [Date] = []
+        var cursor = start
+        while cursor <= today {
+            if habit.isScheduled(on: cursor, calendar: calendar) { opportunities.append(cursor) }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+
+        var longest = 0
+        var running = 0
+        for date in opportunities {
+            if completed.contains(date) {
+                running += 1
+                longest = max(longest, running)
+            } else {
+                running = 0
+            }
+        }
+
+        var current = 0
+        var index = opportunities.count - 1
+        if index >= 0, opportunities[index] == today, !completed.contains(today) { index -= 1 }
+        while index >= 0, completed.contains(opportunities[index]) {
+            current += 1
+            index -= 1
+        }
+        return HabitScheduleStreak(current: current, longest: longest, unit: .checkIn)
+    }
+
+    private static func flexibleWeekStreak(
+        habit: Habit,
+        relativeTo referenceDate: Date,
+        calendar: Calendar
+    ) -> HabitScheduleStreak {
+        let completed = habit.achievedCompletionDates
+        guard let firstCompletion = completed.min(),
+              let firstWeek = calendar.dateInterval(of: .weekOfYear, for: min(habit.startDate ?? firstCompletion, firstCompletion))?.start,
+              let currentWeek = calendar.dateInterval(of: .weekOfYear, for: referenceDate)?.start
+        else {
+            return HabitScheduleStreak(current: 0, longest: 0, unit: .week)
+        }
+
+        let target = Int(max(1, habit.scheduleTarget))
+        var metWeeks: [Bool] = []
+        var week = firstWeek
+        while week <= currentWeek {
+            guard let nextWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: week) else { break }
+            let count = completed.filter { $0 >= week && $0 < nextWeek && $0 <= referenceDate }.count
+            metWeeks.append(count >= target)
+            week = nextWeek
+        }
+
+        var longest = 0
+        var running = 0
+        for met in metWeeks {
+            running = met ? running + 1 : 0
+            longest = max(longest, running)
+        }
+
+        var index = metWeeks.count - 1
+        if index >= 0, !metWeeks[index] { index -= 1 }
+        var current = 0
+        while index >= 0, metWeeks[index] {
+            current += 1
+            index -= 1
+        }
+        return HabitScheduleStreak(current: current, longest: longest, unit: .week)
+    }
+}
+
 struct MonthGrid: Equatable {
     let month: Date
     let weekdaySymbols: [String]

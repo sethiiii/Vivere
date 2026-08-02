@@ -18,6 +18,8 @@ struct HabitDetailView: View {
         HabitStatistics(completionDates: habit.achievedCompletionDates)
     }
 
+    private var streak: HabitScheduleStreak { HabitScheduleStreak(habit: habit) }
+
     init(habit: Habit) {
         self.habit = habit
         let request: NSFetchRequest<Completion> = Completion.fetchRequest()
@@ -82,7 +84,7 @@ struct HabitDetailView: View {
 
     private var statisticsSection: some View {
         HStack {
-            stat("Streak", "\(statistics.currentStreak)")
+            stat("Streak", "\(streak.current)")
             Spacer()
             stat("Check-Ins", "\(statistics.totalCompletions)")
             Spacer()

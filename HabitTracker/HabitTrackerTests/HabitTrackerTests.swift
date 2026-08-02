@@ -262,6 +262,53 @@ struct HabitStoreTests {
         #expect(adherence.percentage == 33)
     }
 
+    @Test func selectedDayStreakIgnoresUnscheduledDays() throws {
+        let (_, context) = makeStore()
+        var draft = HabitDraft()
+        draft.name = "Three-day routine"
+        draft.schedule = .selectedDays
+        draft.weekdays = [.monday, .wednesday, .friday]
+        let habit = try HabitStore.save(draft, in: context)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let monday = try #require(calendar.date(from: DateComponents(year: 2026, month: 8, day: 3)))
+        habit.startDate = monday
+        for offset in [0, 2, 4] {
+            let day = try #require(calendar.date(byAdding: .day, value: offset, to: monday))
+            try HabitStore.toggleCompletion(for: habit, on: day, calendar: calendar, in: context)
+        }
+        let saturday = try #require(calendar.date(byAdding: .day, value: 5, to: monday))
+
+        let streak = HabitScheduleStreak(habit: habit, relativeTo: saturday, calendar: calendar)
+        #expect(streak.current == 3)
+        #expect(streak.longest == 3)
+        #expect(streak.unit == .checkIn)
+    }
+
+    @Test func flexibleScheduleUsesWeeklyStreaks() throws {
+        let (_, context) = makeStore()
+        var draft = HabitDraft()
+        draft.name = "Move three times"
+        draft.schedule = .flexible
+        draft.scheduleTarget = 3
+        let habit = try HabitStore.save(draft, in: context)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.firstWeekday = 2
+        let monday = try #require(calendar.date(from: DateComponents(year: 2026, month: 8, day: 3)))
+        habit.startDate = monday
+        for offset in 0...2 {
+            let day = try #require(calendar.date(byAdding: .day, value: offset, to: monday))
+            try HabitStore.toggleCompletion(for: habit, on: day, calendar: calendar, in: context)
+        }
+        let nextWednesday = try #require(calendar.date(byAdding: .day, value: 9, to: monday))
+
+        let streak = HabitScheduleStreak(habit: habit, relativeTo: nextWednesday, calendar: calendar)
+        #expect(streak.current == 1)
+        #expect(streak.longest == 1)
+        #expect(streak.unit == .week)
+    }
+
     @Test func journalMaintainsOneEntryPerDayAndBackupIncludesIt() throws {
         let (_, context) = makeStore()
         var first = JournalDraft()

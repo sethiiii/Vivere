@@ -21,7 +21,7 @@ struct InsightsView: View {
     }
 
     private var longestStreak: Int {
-        habits.map { HabitStatistics(completionDates: $0.achievedCompletionDates).longestStreak }.max() ?? 0
+        habits.map { HabitScheduleStreak(habit: $0).longest }.max() ?? 0
     }
 
     private var activeToday: Int {
