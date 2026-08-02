@@ -11,19 +11,24 @@ struct ContentView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        ZStack {
             TodayView()
-                .tag(AppTab.habits)
+                .opacity(selectedTab == .habits ? 1 : 0)
+                .allowsHitTesting(selectedTab == .habits)
+                .accessibilityHidden(selectedTab != .habits)
 
             if journalEnabled {
                 JournalView()
-                    .tag(AppTab.journal)
+                    .opacity(selectedTab == .journal ? 1 : 0)
+                    .allowsHitTesting(selectedTab == .journal)
+                    .accessibilityHidden(selectedTab != .journal)
             }
 
             SettingsView()
-                .tag(AppTab.settings)
+                .opacity(selectedTab == .settings ? 1 : 0)
+                .allowsHitTesting(selectedTab == .settings)
+                .accessibilityHidden(selectedTab != .settings)
         }
-        .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             FloatingTabBar(
                 selectedTab: $selectedTab,
