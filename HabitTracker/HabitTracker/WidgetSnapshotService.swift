@@ -19,7 +19,7 @@ struct HabitWidgetItem: Codable, Equatable, Identifiable {
 
 @MainActor
 enum WidgetSnapshotService {
-    static let appGroupIdentifier = "group.com.sethi.HabitTracker"
+    static let appGroupIdentifier = "group.com.sethiiii.vivere"
     static let snapshotKey = "widget.today.snapshot.v1"
 
     static func refresh(from context: NSManagedObjectContext, now: Date = .now) {
