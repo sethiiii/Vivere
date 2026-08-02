@@ -10,7 +10,7 @@ struct ContentView: View {
                     ContentUnavailableView {
                         Label("A Clear Day", systemImage: "checkmark.circle")
                     } description: {
-                        Text("Open HabitTracker on your iPhone to sync today’s habits.")
+                        Text("Open Vivere on your iPhone to sync today’s habits.")
                     }
                 } else {
                     List {

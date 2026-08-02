@@ -60,7 +60,7 @@ private enum HabitShortcutError: LocalizedError {
     case habitNotFound
 
     var errorDescription: String? {
-        "That habit is no longer available. Open HabitTracker to choose another one."
+        "That habit is no longer available. Open Vivere to choose another one."
     }
 }
 

@@ -61,7 +61,7 @@ extension MotivationalQuote {
             return MotivationalQuote(
                 id: "fallback",
                 text: "Begin again with one small step.",
-                author: "HabitTracker",
+                author: "Vivere",
                 category: .resilience,
                 source: nil
             )

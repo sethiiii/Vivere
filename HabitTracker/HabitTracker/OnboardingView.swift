@@ -8,7 +8,7 @@ struct OnboardingView: View {
     private let pages: [OnboardingPage] = [
         OnboardingPage(
             symbol: "checkmark.circle.fill",
-            eyebrow: "MAKE IT YOURS",
+            eyebrow: "VIVERE • TO LIVE",
             title: "Small actions,\nbeautifully simple.",
             detail: "Build routines with one-tap check-ins, flexible goals, and a calm view of today."
         ),

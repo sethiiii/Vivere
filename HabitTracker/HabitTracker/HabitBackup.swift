@@ -237,6 +237,6 @@ enum HabitBackupError: LocalizedError {
     case unsupportedVersion
 
     var errorDescription: String? {
-        "This backup was created by an unsupported version of HabitTracker."
+        "This backup was created by an unsupported version of Vivere."
     }
 }

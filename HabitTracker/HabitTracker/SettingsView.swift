@@ -118,6 +118,7 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    LabeledContent("Vivere", value: "To live")
                     LabeledContent("Version", value: "1.0")
                     Button("View Welcome Tour") { onboardingCompleted = false }
                 } header: {
@@ -233,7 +234,7 @@ private struct DataPrivacyView: View {
             isPresented: $showingExporter,
             document: exportDocument,
             contentType: .json,
-            defaultFilename: "HabitTracker Backup"
+            defaultFilename: "Vivere Backup"
         ) { result in
             if case .failure(let error) = result { errorMessage = error.localizedDescription }
         }

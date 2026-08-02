@@ -44,7 +44,7 @@ struct HabitTrackerApp: App {
                 )) {
                     Button("OK") { persistence.dismissLoadError() }
                 } message: {
-                    Text(persistence.loadErrorMessage ?? "HabitTracker couldn’t finish preparing older records.")
+                    Text(persistence.loadErrorMessage ?? "Vivere couldn’t finish preparing older records.")
                 }
                 .task(id: persistence.isReady) {
                     guard persistence.isReady else { return }
@@ -70,7 +70,7 @@ private struct StorageUnavailableView: View {
         ContentUnavailableView {
             Label("Your Data Is Protected", systemImage: "externaldrive.badge.exclamationmark")
         } description: {
-            Text("HabitTracker couldn’t safely open its local database, so editing is paused to prevent data loss.\n\n\(message)")
+            Text("Vivere couldn’t safely open its local database, so editing is paused to prevent data loss.\n\n\(message)")
         } actions: {
             Button("Try Again", action: retry)
                 .buttonStyle(.borderedProminent)
