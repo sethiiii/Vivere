@@ -126,6 +126,21 @@ struct SettingsView: View {
                 } footer: {
                     Text("No account. No ads. No subscription. Your progress belongs to you.")
                 }
+
+                Section("Legal") {
+                    NavigationLink {
+                        TermsView()
+                    } label: {
+                        settingLabel("Terms & Conditions", detail: "Legal terms for using this app", symbol: "doc.text")
+                    }
+                    NavigationLink {
+                        PrivacyPolicyView()
+                    } label: {
+                        settingLabel("Privacy Policy", detail: "How Vivere handles your data", symbol: "hand.raised")
+                    }
+                } footer: {
+                    Text("By using Vivere you agree to these terms.")
+                }
             }
             .navigationTitle("Settings")
         }
