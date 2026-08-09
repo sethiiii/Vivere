@@ -217,6 +217,7 @@ private struct DataPrivacyView: View {
     @State private var showingImporter = false
     @State private var statusMessage: String?
     @State private var errorMessage: String?
+    @State private var showingDeleteConfirmation = false
 
     var body: some View {
         List {
@@ -227,6 +228,14 @@ private struct DataPrivacyView: View {
                 Label("No account required", systemImage: "person.crop.circle.badge.xmark")
             }
             Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Backups are readable JSON files. Restore merges matching records and does not erase habits already on this device.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("Warning: exported backups may contain your personal habit and journal content. Store exported files securely and only share intentionally.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Button {
                     prepareExport()
                 } label: {
@@ -240,7 +249,20 @@ private struct DataPrivacyView: View {
             } header: {
                 Text("Backup & Restore")
             } footer: {
-                Text("Backups are readable JSON files. Restore merges matching records and does not erase habits already on this device.")
+                Text("Backups are readable JSON files. Keep exported files private — they include your habits and journal entries.")
+            }
+
+            Section("Danger Zone") {
+                Text("Permanently delete all local data stored by Vivere on this device. This cannot be undone and will remove habits, completions, and journal entries.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button(role: .destructive) {
+                    showingDeleteConfirmation = true
+                } label: {
+                    Label("Delete All Data", systemImage: "trash")
+                }
+            } footer: {
+                Text("We recommend exporting a backup before deleting anything.")
             }
         }
         .navigationTitle("Your Data")
@@ -268,6 +290,12 @@ private struct DataPrivacyView: View {
         )) { Button("OK") { errorMessage = nil } } message: {
             Text(errorMessage ?? "Please try again.")
         }
+        .alert("Delete All Data?", isPresented: $showingDeleteConfirmation) {
+            Button("Delete", role: .destructive) { deleteAllData() }
+            Button("Cancel", role: .cancel) { showingDeleteConfirmation = false }
+        } message: {
+            Text("This will permanently remove all habits, completions, and journal entries stored on this device. This cannot be undone.")
+        }
     }
 
     private func prepareExport() {
@@ -288,6 +316,47 @@ private struct DataPrivacyView: View {
             let backup = try HabitBackupCodec.decoder.decode(HabitBackup.self, from: data)
             let count = try HabitBackupService.restore(backup, into: context)
             statusMessage = "Restored \(count) habit\(count == 1 ? "" : "s") and merged their history."
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func deleteAllData() {
+        do {
+            // Delete Core Data entities
+            let habitFetch: NSFetchRequest<Habit> = Habit.fetchRequest()
+            let habits = try context.fetch(habitFetch)
+            habits.forEach { context.delete($0) }
+
+            let completionFetch: NSFetchRequest<Completion> = Completion.fetchRequest()
+            let completions = try context.fetch(completionFetch)
+            completions.forEach { context.delete($0) }
+
+            let journalFetch: NSFetchRequest<JournalEntry> = JournalEntry.fetchRequest()
+            let journals = try context.fetch(journalFetch)
+            journals.forEach { context.delete($0) }
+
+            try HabitStore.save(context)
+
+            // Clear known AppStorage/UserDefaults keys used by the app
+            let keys = [
+                "appearance",
+                "accentTheme",
+                "feature.insights",
+                "feature.advancedHabitOptions",
+                "feature.haptics",
+                "feature.weeklyReview",
+                "feature.gallery",
+                "feature.journal",
+                "quote.category",
+                "feature.dailyMotivation",
+                "onboarding.completed",
+                "quote.favoriteIDs"
+            ]
+            for key in keys { UserDefaults.standard.removeObject(forKey: key) }
+            UserDefaults.standard.synchronize()
+
+            statusMessage = "All local data deleted."
         } catch {
             errorMessage = error.localizedDescription
         }
