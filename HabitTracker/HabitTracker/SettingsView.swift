@@ -312,8 +312,14 @@ private struct DataPrivacyView: View {
             let url = try result.get()
             let accessed = url.startAccessingSecurityScopedResource()
             defer { if accessed { url.stopAccessingSecurityScopedResource() } }
-            let data = try Data(contentsOf: url)
+            let values = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+            guard values.isRegularFile == true else { throw HabitBackupError.invalidFile }
+            guard (values.fileSize ?? 0) <= HabitBackupService.maximumImportBytes else {
+                throw HabitBackupError.fileTooLarge
+            }
+            let data = try Data(contentsOf: url, options: .mappedIfSafe)
             let backup = try HabitBackupCodec.decoder.decode(HabitBackup.self, from: data)
+            try HabitBackupService.validate(backup)
             let count = try HabitBackupService.restore(backup, into: context)
             statusMessage = "Restored \(count) habit\(count == 1 ? "" : "s") and merged their history."
         } catch {

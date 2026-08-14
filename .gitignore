@@ -18,3 +18,22 @@ Preview Content/
 
 # App-specific
 */.store/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+Secrets.*
+secrets.*
+*.private.xcconfig
+GoogleService-Info.plist
+AuthKey_*.p8
+*.p12
+*.mobileprovision
+*.cer
+*.pem
+*.key
+
+# Local reports and security-tool output
+security-report.*
+.gitleaks-report.*

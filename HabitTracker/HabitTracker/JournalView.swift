@@ -470,7 +470,11 @@ private struct JournalEditorView: View {
     @MainActor
     private func loadPhoto(_ item: PhotosPickerItem) async {
         do {
-            guard let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) else { return }
+            guard let data = try await item.loadTransferable(type: Data.self) else { return }
+            guard data.count <= 25 * 1_024 * 1_024 else {
+                throw CocoaError(.fileReadTooLarge)
+            }
+            guard let image = UIImage(data: data) else { throw CocoaError(.fileReadCorruptFile) }
             let longestSide = max(image.size.width, image.size.height)
             guard longestSide.isFinite, longestSide > 0 else {
                 throw CocoaError(.fileReadCorruptFile)
