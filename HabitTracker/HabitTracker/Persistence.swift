@@ -24,6 +24,10 @@ final class PersistenceController: ObservableObject {
         container.persistentStoreDescriptions.forEach { description in
             description.shouldMigrateStoreAutomatically = true
             description.shouldInferMappingModelAutomatically = true
+            description.setOption(
+                FileProtectionType.completeUntilFirstUserAuthentication as NSObject,
+                forKey: NSPersistentStoreFileProtectionKey
+            )
         }
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")

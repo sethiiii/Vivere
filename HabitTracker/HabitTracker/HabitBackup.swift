@@ -100,6 +100,39 @@ enum HabitBackupCodec {
 
 @MainActor
 enum HabitBackupService {
+    static let maximumImportBytes = 50 * 1_024 * 1_024
+    private static let maximumHabits = 10_000
+    private static let maximumJournalEntries = 20_000
+    private static let maximumCompletions = 1_000_000
+    private static let maximumTextLength = 100_000
+
+    static func validate(_ backup: HabitBackup) throws {
+        guard backup.formatVersion == 1 else { throw HabitBackupError.unsupportedVersion }
+        guard backup.habits.count <= maximumHabits,
+              (backup.journalEntries?.count ?? 0) <= maximumJournalEntries,
+              backup.habits.reduce(into: 0, { $0 += $1.completions.count }) <= maximumCompletions else {
+            throw HabitBackupError.tooManyRecords
+        }
+
+        for habit in backup.habits {
+            guard habit.name.count <= maximumTextLength,
+                  (habit.notes?.count ?? 0) <= maximumTextLength,
+                  habit.completions.allSatisfy({ ($0.note?.count ?? 0) <= maximumTextLength }) else {
+                throw HabitBackupError.textTooLong
+            }
+        }
+
+        for entry in backup.journalEntries ?? [] {
+            let values = [entry.title, entry.body, entry.gratitude, entry.intention,
+                          entry.prompt, entry.spiritualWin, entry.mentalWin,
+                          entry.physicalWin, entry.notes]
+            guard values.allSatisfy({ ($0?.count ?? 0) <= maximumTextLength }),
+                  (entry.photoData?.count ?? 0) <= maximumImportBytes else {
+                throw HabitBackupError.textTooLong
+            }
+        }
+    }
+
     static func makeBackup(from context: NSManagedObjectContext) throws -> HabitBackup {
         let request: NSFetchRequest<Habit> = Habit.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Habit.sortOrder, ascending: true)]
@@ -165,7 +198,7 @@ enum HabitBackupService {
     }
 
     static func restore(_ backup: HabitBackup, into context: NSManagedObjectContext) throws -> Int {
-        guard backup.formatVersion == 1 else { throw HabitBackupError.unsupportedVersion }
+        try validate(backup)
         let existingHabits = try context.fetch(Habit.fetchRequest())
         var habitsByID: [UUID: Habit] = [:]
         existingHabits.forEach { habit in
@@ -247,8 +280,18 @@ enum HabitBackupService {
 
 enum HabitBackupError: LocalizedError {
     case unsupportedVersion
+    case invalidFile
+    case fileTooLarge
+    case tooManyRecords
+    case textTooLong
 
     var errorDescription: String? {
-        "This backup was created by an unsupported version of Vivere."
+        switch self {
+        case .unsupportedVersion: "This backup uses an unsupported format."
+        case .invalidFile: "The selected backup is not a regular file."
+        case .fileTooLarge: "This backup is larger than the 50 MB safety limit."
+        case .tooManyRecords: "This backup contains too many records to import safely."
+        case .textTooLong: "This backup contains an entry that is too large to import safely."
+        }
     }
 }

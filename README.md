@@ -66,6 +66,8 @@ Vivere has no account system, advertising identifier, analytics SDK, telemetry c
 
 Backups leave the app only when the user explicitly exports one through the system document picker. Journal photos are selected explicitly and stored with the local entry. See the complete [Vivere Privacy Policy](HabitTracker/PRIVACY.md).
 
+Repository and release safeguards are documented in [SECURITY.md](SECURITY.md) and the [launch security checklist](HabitTracker/Docs/RELEASE_SECURITY_CHECKLIST.md). Run `HabitTracker/Scripts/security-audit.sh` before distributing a build or publishing a branch.
+
 ## Apple frameworks only
 
 | Capability | Framework |
